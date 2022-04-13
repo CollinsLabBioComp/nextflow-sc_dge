@@ -21,6 +21,10 @@ differential_expression:
               pre_filter_genes: true
               proportion_covariate_column: 'cell_type'
               include_proportion_covariates: true
+              ruvseq: false
+              ruvseq_n_empirical_genes: 0.5
+              ruvseq_min_pvalue: 0.25
+              ruvseq_k: 2
             - method: 'edger::singlecell::glmQLFit'
               formula: '~ disease_status + sex + age'
               variable_target: 'disease_status'
@@ -30,6 +34,10 @@ differential_expression:
               pre_filter_genes: false
               proportion_covariate_column: 'cell_type'
               include_proportion_covariates: false
+              ruvseq: false
+              ruvseq_n_empirical_genes: 0.5
+              ruvseq_min_pvalue: 0.25
+              ruvseq_k: 2
             - method: 'deseq::pseudobulk::glmGamPoi'
               formula: '~ sex + disease_status + age + disease_status:sex'
               variable_target: 'disease_status:sex'
@@ -39,6 +47,10 @@ differential_expression:
               pre_filter_genes: true
               proportion_covariate_column: 'cell_type'
               include_proportion_covariates: false
+              ruvseq: true
+              ruvseq_n_empirical_genes: 0.5
+              ruvseq_min_pvalue: 0.25
+              ruvseq_k: 2
     de_merge_config:
         ihw_correction:
             run_process: true

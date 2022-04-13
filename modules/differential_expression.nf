@@ -117,6 +117,12 @@ process run_differential_expression {
             cmd__options = "${cmd__options} --include_proportion_covariates"
             formula_clean = "${formula_clean}__proportion_covs-${prop_cov_col}"
         }
+        if (model.ruvseq) {
+            cmd__options = "${cmd__options} --run_ruvseq"
+            formula_clean = "${formula_clean}__ruvseq-ngenes=${model.ruvseq_n_empirical_genes}"
+            formula_clean = "${formula_clean}_min_pvalue=${model.ruvseq_min_pvalue}"
+            formula_clean = "${formula_clean}_kfactors=${model.ruvseq_k}"
+        }
         outdir = "${outdir_prev}/differential_expression/${variable_target_clean}"
         outdir = "${outdir}/cell_label=${cell_label}"
         outdir = "${outdir}/method=${model.method}___formula=${formula_clean}"
@@ -172,6 +178,9 @@ process run_differential_expression {
             --method "${model.method}" \
             --method_script $baseDir/bin/${method_script} \
             --mean_cp10k_filter ${mean_cp10k_filter} \
+            --ruvseq_n_empirical_genes ${model.ruvseq_n_empirical_genes} \
+            --ruvseq_min_pvalue ${model.ruvseq_min_pvalue} \
+            --ruvseq_k_factors ${model.ruvseq_k} \
             --out_file "${outfile}" \
             --cores_available ${task.cpus} \
             ${cmd__varcast} \

@@ -29,6 +29,10 @@ Parameters are applied within each cell type as denoted by `anndata_cell_label`
   - `pre_filter_genes`: Logical (e.g., true or false) to apply `mean_cp10k_filter` before or after performing differential expression
   - `proportion_covariate_column`: Column in cell metadata to calculate the proportion of cells from each experiment (defined by `experiment_key_column`) representing each value. For instance, if same as `anndata_cell_label`,  pipeline will calculate the proportion of each cell type for each experiment key.
   - `include_proportion_covariates`: Logical (e.g., true or false) to include proportions from `proportion_covariate_column` in `formula`
+  - `ruvseq`: Logical (e.g., true or false) to run RUVSeq
+  - `ruvseq_n_empirical_genes`: Number of empirical genes to use as input into RUVSeq. If value<1, we will take the proportion of total genes (value * # genes total). If value>1, we will use value as the number of genes
+  - `ruvseq_min_pvalue`: Number representing minimum p-value threshold for empirical genes. Only genes with p-value > value will be used as empirical genes
+  - `ruvseq_k`: Number of RUVSeq factors to adjust for
 - `de_merge_config`: Configuration for merge settings
   - `ihw_correction`: Configuration for IHW correction
     - `covariates`: Comma-separated list of covariates to include in IHW correction (e.g., "cell_label,disease_status")

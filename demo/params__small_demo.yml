@@ -21,6 +21,10 @@ differential_expression:
               pre_filter_genes: true
               proportion_covariate_column: 'cell_type'
               include_proportion_covariates: false
+              ruvseq: false
+              ruvseq_n_empirical_genes: 0.5
+              ruvseq_min_pvalue: 0.25
+              ruvseq_k: 5
     de_merge_config:
         ihw_correction:
             run_process: true

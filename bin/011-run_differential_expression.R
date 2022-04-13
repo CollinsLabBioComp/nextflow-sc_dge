@@ -6,43 +6,43 @@ set.seed(0)
 ##################### Read Command Line Parameters #############################
 suppressPackageStartupMessages(library(optparse))
 optionList <- list(
-  optparse::make_option(c("-i", "--input_dir"),
+  optparse::make_option(c("-a", "--input_dir"),
                         type = "character",
                         default = "matrix_dir",
                         help = "Directory containing input files for MAST"
   ),
 
-  optparse::make_option(c("-l", "--cell_label_column"),
+  optparse::make_option(c("-b", "--cell_label_column"),
                         type = "character",
                         default = "cluster",
                         help = "Column to use for cell label."
   ),
 
-  optparse::make_option(c("-a", "--cell_label"),
+  optparse::make_option(c("-c", "--cell_label"),
                         type = "character",
                         default = "",
                         help = "Cell label."
   ),
 
-  optparse::make_option(c("-c", "--variable_target"),
+  optparse::make_option(c("-d", "--variable_target"),
                         type = "character",
                         default = "condition",
                         help = "Column to test."
   ),
 
-  optparse::make_option(c("-d", "--discrete_variables"),
+  optparse::make_option(c("-e", "--discrete_variables"),
                         type = "character",
                         default = "",
                         help = "Discrete covariates to include in the model."
   ),
 
-  optparse::make_option(c("-z", "--continuous_variables"),
+  optparse::make_option(c("-f", "--continuous_variables"),
                         type = "character",
                         default = "",
                         help = "Continuous covariates to include in the model."
   ),
 
-  optparse::make_option(c("-r", "--discrete_levels"),
+  optparse::make_option(c("-g", "--discrete_levels"),
                         type = "character",
                         default = "",
                         help = "Levels of discrete covariates to include in
@@ -52,7 +52,7 @@ optionList <- list(
                             sex::M,F;;disease::healthy,unwell,sick"
   ),
 
-  optparse::make_option(c("-m", "--method"),
+  optparse::make_option(c("-i", "--method"),
                         type = "character",
                         default = "",
                         help = "Method to use. Needs to correspond with
@@ -65,45 +65,45 @@ optionList <- list(
                         deseq::pseudobulk::glmGamPoi"
   ),
 
-  optparse::make_option(c("-s", "--method_script"),
+  optparse::make_option(c("-j", "--method_script"),
                         type = "character",
                         default = "",
                         help = "Script to use to run DE."
   ),
 
-  optparse::make_option(c("-e", "--experiment_key"),
+  optparse::make_option(c("-k", "--experiment_key"),
                         type = "character",
                         default = "sanger_sample_id",
                         help = "Key to use to determine sample source of cells."
   ),
 
-  optparse::make_option(c("-x", "--mean_cp10k_filter"),
+  optparse::make_option(c("-l", "--mean_cp10k_filter"),
                         type = "double",
                         default = 1,
                         help = "Filter to remove genes with fewer cp10k
                         averages."
   ),
 
-  optparse::make_option(c("-y", "--pre_filter_genes"),
+  optparse::make_option(c("-m", "--pre_filter_genes"),
                         action = "store_true",
                         default = FALSE,
                         help = "Filter genes before differential expression
                         analysis."
   ),
 
-  optparse::make_option(c("-o", "--out_file"),
+  optparse::make_option(c("-n", "--out_file"),
                         type = "character",
                         default = "",
                         help = "Base output name."
   ),
 
-  optparse::make_option(c("-n", "--cores_available"),
+  optparse::make_option(c("-o", "--cores_available"),
                         type = "integer",
                         default = 1,
                         help = "Number of cores to use."
   ),
 
-  optparse::make_option(c("-f", "--formula"),
+  optparse::make_option(c("-p", "--formula"),
                         type = "character",
                         default = "",
                         help = "Formula to model (if none, will automatically
@@ -113,7 +113,7 @@ optionList <- list(
                              effects one must use glmer method."
   ),
 
-  optparse::make_option(c("-b", "--include_proportion_covariates"),
+  optparse::make_option(c("-q", "--include_proportion_covariates"),
                         action = "store_true",
                         default = FALSE,
                         help = "If TRUE, include proportion covarates. These
@@ -122,12 +122,41 @@ optionList <- list(
                         `_proportion__autogen`."
   ),
 
-  optparse::make_option(c("-g", "--include_cluster_identity"),
+  optparse::make_option(c("-r", "--include_cluster_identity"),
                         action = "store_true",
                         default = FALSE,
                         help = "If FALSE, do not include own cell identity as
                         a covariate. If TRUE, do include own cell identity as
                         a covariate."
+  ),
+  
+  optparse::make_option(c("-s", "--run_ruvseq"),
+                        action = "store_true",
+                        default = FALSE,
+                        help = "If TRUE, perform RUVseq based on empirically
+                        defined control genes. If FALSE, do nothing."
+  ),
+  
+  optparse::make_option(c("-t", "--ruvseq_n_empirical_genes"),
+                        type = "double",
+                        default = 0.5,
+                        help = "Number of empirical genes to use for RUVseq. If
+                        `value`<1, we use (# of total genes * `value`). If 
+                        `value`>1, we use `value`."
+  ),
+  
+  optparse::make_option(c("-u", "--ruvseq_min_pvalue"),
+                        type = "double",
+                        default = 0.25,
+                        help = "Minimum pvalue threshold for RUVseq empirical
+                        genes. Any gene with pvalue<`value` will be removed from
+                        control set."
+  ),
+  
+  optparse::make_option(c("-w", "--ruvseq_k_factors"),
+                        type = "integer",
+                        default = 2,
+                        help = "Number of factors to calculate with RUVseq."
   ),
 
   optparse::make_option(c("-v", "--verbose"),
@@ -164,6 +193,7 @@ arguments <- optparse::parse_args(parser, positional_arguments = TRUE)
 ######################## Required Packages #####################################
 suppressPackageStartupMessages(library(Matrix))
 suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(RUVSeq))
 # Source the method script
 suppressPackageStartupMessages(source(arguments$options$method_script))
 ################################################################################
@@ -474,6 +504,36 @@ reconstruct_formula <- function(original_terms, terms_to_remove) {
   })
   form <- formula(sprintf("~ %s", paste(form_terms, collapse = " + ")))
   return(form)
+}
+
+run_ruvseq <- function(
+  nominal_results,
+  n_empirical_genes,
+  min_pvalue,
+  k,
+  counts_mtx
+) {
+  # If `n_empirical_genes` < 1, assume proportional
+  n_emp_genes <- if (n_empirical_genes < 1) {
+      round(nrow(nominal_results) * n_empirical_genes) 
+    } else {
+      n_empirical_genes
+    }
+  
+  # Remove values not converged or <= min_pvalue
+  emp_genes_df <- nominal_results[!is.na(nominal_results$pvalue), ]
+  if (is.null(min_pvalue)) {
+    emp_genes_df <- emp_genes_df[emp_genes_df$pvalue > min_pvalue, ]  
+  }
+  
+  # Now order by p-value and get control genes
+  emp_genes <- emp_genes_df$gene[order(emp_genes_df$pvalue, decreasing = T)]
+  emp_genes <- emp_genes[1:min(n_emp_genes, length(emp_genes))]
+  print(paste('Number of empirical genes:', length(emp_genes)))
+  
+  # Now get RUVseq factors
+  ruv_covs <- RUVSeq::RUVg(counts_mtx, emp_genes, k=k, isLog=F)
+  return(as.data.frame(ruv_covs$W))
 }
 
 get_empty_df <- function() {
@@ -798,6 +858,63 @@ if (nrow(test_data) == 0) {
       print('Creating an empty dataframe to continue the pipeline...')
       return(get_empty_df())
     }
+    
+    cols_retain <- c("gene", "gene_symbol", "log2fc", "pvalue",
+                     "test_statistic", "test_statistic_type")
+    
+    # If RUVseq, perform
+    if (arguments$options$run_ruvseq) {
+      ruvseq_n_emp <- arguments$options$ruvseq_n_empirical_genes
+      ruvseq_min_pvalue <- arguments$options$ruvseq_min_pvalue
+      ruvseq_k <- arguments$options$ruvseq_k_factors
+      
+      print('Performing RUVSeq with the following settings:')
+      print(paste('# empirical genes:', ruvseq_n_emp))
+      print(paste('Minimum p-value:', ruvseq_min_pvalue))
+      print(paste('# factors:', ruvseq_k))
+      
+      ruvseq_factors <- run_ruvseq(
+        rez,
+        ruvseq_n_emp,
+        ruvseq_min_pvalue,
+        ruvseq_k,
+        counts_matrix
+      )
+      
+      # Now update data and re-run
+      metadata <- cbind(metadata, ruvseq_factors)
+      formula <- update(
+        formula,
+        sprintf('~ . + %s', paste(colnames(ruvseq_factors), collapse = '+'))
+      )
+      
+      rez <- try(
+        DE_calculate_dge(
+          input_matrix = input,
+          feature_metadata = feature_metadata,
+          sample_metadata = metadata,
+          testing_var = testing_var,
+          coef_value = i["alt_var"],
+          formula = formula,
+          n_cores = arguments$options$cores_available,
+          method = de_method
+        )
+      )
+      
+      # Since passed once, shouldn't hit but keep in case
+      if (class(rez) == "try-error") {
+        print(paste(
+          'The function call `DE_calculate_dge` returned the following error:',
+          geterrmessage()
+        ))
+        print('Creating an empty dataframe to continue the pipeline...')
+        return(get_empty_df())
+      }
+    } else {
+      ruvseq_n_emp <- NULL
+      ruvseq_min_pvalue <- NULL
+      ruvseq_k <- NULL
+    }
 
     ## Get only the columns we want
     cols_retain <- c("gene", "gene_symbol", "log2fc", "pvalue",
@@ -825,6 +942,9 @@ if (nrow(test_data) == 0) {
     rez$de_method <- arguments$options$method
     rez$pre_filtered <- arguments$options$pre_filter_genes
     rez$include_cell_proportions <- include_cell_props
+    rez$ruvseq_n_empirical_genes <- ruvseq_n_emp
+    rez$ruvseq_min_pvalue <- ruvseq_min_pvalue
+    rez$ruvseq_k_factors <- ruvseq_k
 
     ## Get count averages
     barcodes <- strsplit(i["barcodes"], split="$$", fixed=T)[[1]]
