@@ -29,16 +29,23 @@ Parameters are applied within each cell type as denoted by `anndata_cell_label`
   - `pre_filter_genes`: Logical (e.g., true or false) to apply `mean_cp10k_filter` before or after performing differential expression
   - `proportion_covariate_column`: Column in cell metadata to calculate the proportion of cells from each experiment (defined by `experiment_key_column`) representing each value. For instance, if same as `anndata_cell_label`,  pipeline will calculate the proportion of each cell type for each experiment key.
   - `include_proportion_covariates`: Logical (e.g., true or false) to include proportions from `proportion_covariate_column` in `formula`
+  - `ruvseq`: Logical (e.g., true or false) to run RUVSeq
+  - `ruvseq_n_empirical_genes`: Number of empirical genes to use as input into RUVSeq. If value<1, we will take the proportion of total genes (value * # genes total). If value>1, we will use value as the number of genes
+  - `ruvseq_min_pvalue`: Number representing minimum p-value threshold for empirical genes. Only genes with p-value > value will be used as empirical genes
+  - `ruvseq_k`: Number of RUVSeq factors to adjust for
 - `de_merge_config`: Configuration for merge settings
   - `ihw_correction`: Configuration for IHW correction
     - `covariates`: Comma-separated list of covariates to include in IHW correction (e.g., "cell_label,disease_status")
     - `alpha`: See [IHW](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4930141/) documentation
 - `de_plot_config`: Parameters for plotting differential expression results
   - `mean_expression_filter`: List of mean expression thresholds to drop for plots for each group in `anndata_cell_label`. For example: if gene A expression is 0 counts in cluster 1 and 10 in cluster 2, it will be dropped from cluster 1 but not cluster 2.
-- `fgsea_config`: Parameters for running gene set enrichment using fGSEA
-  - `sample_size`: See [fGSEA](https://www.biorxiv.org/content/10.1101/060012v3) documentation
-  - `score_type`: See [fGSEA](https://www.biorxiv.org/content/10.1101/060012v3) documentation
-  - `value`: List of alternate configurations
+- `goenrich_config`:
+  - `go_terms`: Ontology terms: MF (Molecular Function), CC (Cellular Component), BP (Biological Process)
+  - `clustering_method`: Method to cluster terms. Options: "binary_cut", "louvain", "mclust"
+- `gsea_config`: Parameters for running gene set analyses
+  - `fgsea_parameters`: List of alternate configurations for fgsea
+    - `sample_size`: See [fGSEA](https://www.biorxiv.org/content/10.1101/060012v3) documentation
+    - `score_type`: See [fGSEA](https://www.biorxiv.org/content/10.1101/060012v3) documentation
     - `min_set_size`: See [fGSEA](https://www.biorxiv.org/content/10.1101/060012v3) documentation
     - `max_set_size`: See [fGSEA](https://www.biorxiv.org/content/10.1101/060012v3) documentation
     - `eps`: See [fGSEA](https://www.biorxiv.org/content/10.1101/060012v3) documentation
@@ -54,3 +61,6 @@ Parameters are applied within each cell type as denoted by `anndata_cell_label`
       * `c6.all`: Oncogenic signatures
       * `c7.all`: Immunologic signatures
       * `all`: All gene sets (c2.cp.reactome, c2.cp.kegg, c5.bp, c5.cc, c5.mf)
+  - `gsea_summarize_parameters`: Parameters to summarize GSEA data
+    - `distance_metric`: Metric to calculate distance between terms. Options: "kappa", "jaccard", "dice", "overlap"
+    - `clustering_method`: Method to cluster terms. Options: "binary_cut", "louvain", "mclust"

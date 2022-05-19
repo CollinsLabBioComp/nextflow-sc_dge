@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Activate the conda environment 
+# Activate the conda environment
 #source activate sc_diff_expr
 
 # Remove old logs but not the most previous run
@@ -42,7 +42,7 @@ ${NF_PATH}/nextflow run \
      -profile "lsf" \
      --file_anndata "${STUDY_DIR}/demo_data.h5ad" \
      --output_dir "${OUTPUT_DIR}" \
-     -params-file "${STUDY_DIR}/params__small_demo.yml" \
+     -params-file "${STUDY_DIR}/params-dge_test_type_demo.yml" \
      -with-report \
      -with-trace \
      -with-timeline \

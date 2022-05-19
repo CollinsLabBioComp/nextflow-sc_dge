@@ -58,4 +58,4 @@ install.packages("<package>")
 
 ## 3. [OPTIONAL] Docker
 
-Alternatively, we have developed a Docker image using [Dockerfile](Dockerfile). To use the [pre-generated docker image](https://hub.docker.com/layers/196450988/henryjt/sc_nf_diffexpression/1.0.0/images/sha256-da59d053c402d3ba2f610488a91e5dead9a2821ac0bb565723ca5c9bef4f1d5e?context=repo), use nextflow's singularity integration: [demo file](../demo/run_differential_expression_demo__singularity.sh).
+Alternatively, we use the Docker image of the environment [https://hub.docker.com/repository/docker/letaylor/sc_nf_diffexpression](https://hub.docker.com/repository/docker/letaylor/sc_nf_diffexpression).
