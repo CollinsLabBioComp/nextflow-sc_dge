@@ -645,6 +645,51 @@ process plot_gsea_results {
         """
 }
 
+
+process summarize_gsea_results {
+    // Summarize merged GSEA data frame
+    // ------------------------------------------------------------------------
+    scratch false        // use tmp directory
+    echo echo_mode       // echo output from script
+
+    publishDir  path: "${outdir}",
+                saveAs: {filename -> filename.replaceAll("${runid}-", "")},
+                mode: "${task.publish_mode}",
+                overwrite: "true"
+
+    input:
+        val(outdir_prev)
+        tuple(
+            val(condition),
+            path(merged_df)
+        )
+        each params
+
+    output:
+        val(outdir, emit: outdir)
+        path("${outfile}-*.tsv.gz")
+        path("*.pdf")
+
+    script:
+        runid = random_hex(16)
+        outdir = "${outdir_prev}/differential_expression/${condition}/"
+        outfile = "${condition}_merged_gsea_summary"
+        process_info = "${runid} (runid)"
+        process_info = "${process_info}, ${task.cpus} (cpus)"
+        process_info = "${process_info}, ${task.memory} (memory)"
+        """
+        echo "plot_gsea_results: ${process_info}"
+        echo "publish_directory: ${outdir}"
+        017-summarize_fgsea.R \
+            --gsea_results ${merged_df} \
+            --gsets_gene_matrix '$baseDir/data/gene_set_genes.tsv.gz' \
+            --term_distance_metric ${params.distance_metric} \
+            --clustering_method ${params.clustering_method} \
+            --output_file_tag '${outfile}'
+        """
+}
+
+
 workflow wf__differential_expression {
     take:
         outdir
@@ -654,7 +699,7 @@ workflow wf__differential_expression {
         model
         de_merge_config
         de_plot_config
-        fgsea_config
+        gsea_config
     main:
         // Get a list of all of the cell types
         get_cell_label_list(
@@ -737,19 +782,19 @@ workflow wf__differential_expression {
         )
 
         // Run fGSEA on DE results
-        if (fgsea_config.run_process) {
+        if (gsea_config.run_process) {
             run_fgsea(
                 de_results,
-                fgsea_config.sample_size,
-                fgsea_config.score_type,
-                fgsea_config.value,
+                gsea_config.sample_size,
+                gsea_config.score_type,
+                gsea_config.fgsea_parameters,
                 ["unsigned", "signed"]
             )
         }
 
         // Combine results of different GSEA methods
         gsea_results = null
-        if (fgsea_config.run_process) {
+        if (gsea_config.run_process) {
             gsea_results = run_fgsea.out.results
         }
 
@@ -799,6 +844,13 @@ workflow wf__differential_expression {
             plot_gsea_results(
                 outdir,
                 merge_gsea_dataframes.out.merged_results
+            )
+
+            // Summarize GSEA results across all models
+            summarize_gsea_results(
+                outdir,
+                merge_gsea_dataframes.out.merged_results,
+                gsea_config.gsea_summarize_parameters
             )
         }
 

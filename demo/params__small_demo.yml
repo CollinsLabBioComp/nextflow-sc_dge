@@ -37,13 +37,16 @@ differential_expression:
                 2.'
             value:
                 - 0.0
-    fgsea_config:
+    gsea_config:
         run_process: true
         description: 'Parameters to run fGSEA.'
         sample_size: 101
         score_type: 'std'
-        value:
+        fgsea_parameters:
             - min_set_size: 1
               max_set_size: Inf
               eps: 0
               database: 'c2.cp.kegg'
+        gsea_summarize_parameters:
+            - distance_metric: 'kappa'
+              clustering_method: 'louvain'

@@ -80,7 +80,7 @@ workflow {
                 params.differential_expression.models,
                 params.differential_expression.de_merge_config,
                 params.differential_expression.de_plot_config,
-                params.differential_expression.fgsea_config
+                params.differential_expression.gsea_config
             )
         }
     // NOTE: One could do publishing in the workflow like so, however

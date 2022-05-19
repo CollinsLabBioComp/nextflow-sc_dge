@@ -15,3 +15,4 @@ dependencies:
   - libxml2
   - r-xml=3.99-0.3
   - r-renv=0.15.3
+  - r-biocmanager=1.30.10

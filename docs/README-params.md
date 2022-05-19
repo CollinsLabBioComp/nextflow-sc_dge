@@ -35,10 +35,10 @@ Parameters are applied within each cell type as denoted by `anndata_cell_label`
     - `alpha`: See [IHW](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4930141/) documentation
 - `de_plot_config`: Parameters for plotting differential expression results
   - `mean_expression_filter`: List of mean expression thresholds to drop for plots for each group in `anndata_cell_label`. For example: if gene A expression is 0 counts in cluster 1 and 10 in cluster 2, it will be dropped from cluster 1 but not cluster 2.
-- `fgsea_config`: Parameters for running gene set enrichment using fGSEA
+- `gsea_config`: Parameters for running gene set enrichment using fGSEA
   - `sample_size`: See [fGSEA](https://www.biorxiv.org/content/10.1101/060012v3) documentation
   - `score_type`: See [fGSEA](https://www.biorxiv.org/content/10.1101/060012v3) documentation
-  - `value`: List of alternate configurations
+  - `fgsea_parameters`: List of alternate configurations for fgsea
     - `min_set_size`: See [fGSEA](https://www.biorxiv.org/content/10.1101/060012v3) documentation
     - `max_set_size`: See [fGSEA](https://www.biorxiv.org/content/10.1101/060012v3) documentation
     - `eps`: See [fGSEA](https://www.biorxiv.org/content/10.1101/060012v3) documentation
@@ -54,3 +54,6 @@ Parameters are applied within each cell type as denoted by `anndata_cell_label`
       * `c6.all`: Oncogenic signatures
       * `c7.all`: Immunologic signatures
       * `all`: All gene sets (c2.cp.reactome, c2.cp.kegg, c5.bp, c5.cc, c5.mf)
+  - `gsea_summarize_parameters`: Parameters to summarize GSEA data
+    - `distance_metric`: Metric to calculate distance between terms. Options: "kappa", "jaccard", "dice", "overlap"
+    - `clustering_method`: Method to cluster terms. Options: "binary_cut", "louvain", "mclust"
