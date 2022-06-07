@@ -1,6 +1,7 @@
 #!/usr/bin/env nextflow
 
-nextflow.preview.dsl = 2
+nextflow.enable.dsl=2
+
 
 VERSION = "0.0.1" // Do not edit, controlled by bumpversion.
 
