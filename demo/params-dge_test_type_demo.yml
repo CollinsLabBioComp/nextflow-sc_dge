@@ -1,9 +1,9 @@
 experiment_key_column:
     description: 'Column used to group samples to make pseudobulk.'
-    value: 'experiment_id'
+    value: 'sample_id'
 anndata_cell_label:
     description: 'Anndata cell label column in obs slot.'
-    value: 'cluster'
+    value: 'cell_type'
 differential_expression:
     run_process: true
     models:
@@ -12,40 +12,40 @@ differential_expression:
                 variable_continuous or variable_discrete.'
         mean_cp10k_filter: 1
         value:
-            - method: ''
-              formula: '~ '
-              variable_target: ''
+            - method: 'mast::singlecell::bayesglm'
+              formula: '~ sex + disease_status'
+              variable_target: 'disease_status'
               variable_continuous: ''
-              variable_discrete: ''
-              variable_discrete_level: ''
+              variable_discrete: 'sex,disease_status'
+              variable_discrete_level: 'sex::male,female;;disease_status::healthy,disease'
               pre_filter_genes: true
-              proportion_covariate_column: 'cluster'
-              include_proportion_covariates: true
-              ruvseq: true
-              ruvseq_n_empirical_genes: 0.5
-              ruvseq_min_pvalue: 0.25
-              ruvseq_k: 2
-            - method: ''
-              formula: '~ '
-              variable_target: ''
-              variable_continuous: ''
-              variable_discrete: ''
-              variable_discrete_level: ''
-              pre_filter_genes: false
-              proportion_covariate_column: 'cluster'
+              proportion_covariate_column: 'cell_type'
               include_proportion_covariates: true
               ruvseq: false
               ruvseq_n_empirical_genes: 0.5
               ruvseq_min_pvalue: 0.25
               ruvseq_k: 2
-            - method: ''
-              formula: '~ '
-              variable_target: ''
-              variable_continuous: ''
-              variable_discrete: ''
-              variable_discrete_level: ''
+            - method: 'edger::singlecell::glmQLFit'
+              formula: '~ disease_status + sex + age'
+              variable_target: 'disease_status'
+              variable_continuous: 'age'
+              variable_discrete: 'sex,disease_status'
+              variable_discrete_level: 'sex::male,female;;disease_status::healthy,disease'
+              pre_filter_genes: false
+              proportion_covariate_column: 'cell_type'
+              include_proportion_covariates: false
+              ruvseq: false
+              ruvseq_n_empirical_genes: 0.5
+              ruvseq_min_pvalue: 0.25
+              ruvseq_k: 2
+            - method: 'deseq::pseudobulk::glmGamPoi'
+              formula: '~ sex + disease_status + age + disease_status:sex'
+              variable_target: 'disease_status:sex'
+              variable_continuous: 'age'
+              variable_discrete: 'sex,disease_status'
+              variable_discrete_level: 'sex::male,female;;disease_status::healthy,disease'
               pre_filter_genes: true
-              proportion_covariate_column: 'cluster'
+              proportion_covariate_column: 'cell_type'
               include_proportion_covariates: false
               ruvseq: true
               ruvseq_n_empirical_genes: 0.5
@@ -56,7 +56,7 @@ differential_expression:
             run_process: false
             description: 'Run IHW to correct differential expression results.'
             value:
-                covariates: ''
+                covariates: 'cell_label,coef_value'
                 alpha: 0.1
     de_plot_config:
         mean_expression_filter:
@@ -66,17 +66,16 @@ differential_expression:
                 in cluster 2, it will be dropped from cluster 1 but not cluster
                 2.'
             value:
-                - 0.0
                 - 0.25
     goenrich_config:
-        run_process: true
+        run_process: false
         value:
           - go_terms: 'MF'
             clustering_method: 'louvain'
     gsea_config:
         description: 'Parameters to run gene set analyses.'
         fgsea_parameters:
-            run_process: true
+            run_process: false
             value:
               - sample_size: 101
                 score_type: 'std'

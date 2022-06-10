@@ -1,4 +1,6 @@
-FROM rocker/r-ver:4.0.2
+FROM rocker/r-base:4.2.0
+# FROM rocker/tidyverse:4.2.0  # alternative
+
 
 ############################ Setup: OS #########################################
 # Set up locales properly
@@ -7,7 +9,6 @@ RUN apt-get update && \
     apt-get purge && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
 
 RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen && \
     locale-gen
@@ -37,7 +38,10 @@ RUN apt-get update && \
         libxml2-dev \
         libgit2-dev \
         zlib1g-dev \
-        build-essential && \
+        build-essential \
+        libgeos-dev \
+        libbz2-dev \
+        liblzma-dev && \
     apt-get purge && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -52,23 +56,46 @@ RUN adduser --disabled-password \
 # set up the user directory structure
 RUN mkdir ${HOME}/tmp && \
     mkdir ${HOME}/bin && \
-    mkdir ${HOME}/analysis
+    mkdir ${HOME}/analysis && \
+    mkdir ${HOME}/.cache && \
+    mkdir ${HOME}/.cache/matplotlib
 ENV PATH ${HOME}/bin:$PATH
 ################################################################################
+
 
 ############################ Setup: conda ######################################
 # install conda
 USER root
-# ENV CONDA_FILE https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh #- scrublet doesnt work with python 3.9.5 hence we shouldnt use the latest version - mo11
-ENV CONDA_FILE https://repo.anaconda.com/miniconda/Miniconda3-py38_4.10.3-Linux-x86_64.sh
+ENV CONDA_FILE https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
 RUN echo "export PATH=${HOME}/conda/bin:$PATH" > /etc/profile.d/conda.sh && \
-    wget --no-check-certificate ${CONDA_FILE} -O ${HOME}/tmp/miniconda.sh && \
-    /bin/bash ${HOME}/tmp/miniconda.sh -b -p ${HOME}/conda && \
-    rm ${HOME}/tmp/miniconda.sh && \
+    wget --quiet ${CONDA_FILE} -O /tmp/miniconda.sh && \
+    /bin/bash /tmp/miniconda.sh -b -p ${HOME}/conda && \
+    rm /tmp/miniconda.sh && \
     ${HOME}/conda/bin/conda clean -atipy
-
 ENV PATH ${HOME}/conda/bin:$PATH
+
+# install mamba
+RUN conda install mamba -n base -c conda-forge
+
+# alternative conda install (instead of the manual install from above)
+# FROM continuumio/miniconda3:latest
 ################################################################################
+
+
+############################ Setup: non-conda tools ############################
+# download things to tmp
+WORKDIR ${HOME}/tmp
+
+# Example: install GCTA to bin
+#RUN wget --quiet \
+#    https://cnsgenomics.com/software/gcta/gcta_1.92.1beta5.zip && \
+#    unzip gcta_1.92.1beta5.zip && \
+#    chmod 755 gcta_1.92.1beta5/gcta64 && \
+#    mv gcta_1.92.1beta5/gcta64 /bin/gcta64 && \
+#    rm gcta_1.92.1beta5.zip && \
+#    rm -r gcta_1.92.1beta5
+################################################################################
+
 
 ############################ Setup: conda environment ##########################
 # make sure conda files are owned by user
@@ -81,55 +108,94 @@ COPY environment.yml ${HOME}/tmp/environment.yml
 # install conda environment
 # NOTE: conda clean -atipy
 #   removes everything w/o confirmation (leaves all environments functional).
+RUN mamba config --set always_yes yes --set changeps1 no && \
+   mamba update mamba --yes && \
+   mamba env update -v -n root --file ${HOME}/tmp/environment.yml && \
+   mamba list --name root && \
+   mamba clean -atipy && \
+   rm ${HOME}/tmp/environment.yml
 
-RUN conda config --set always_yes yes --set changeps1 no
-# update conda:
-RUN conda update -n base -c defaults conda
-# use mamba solver to install packages
-RUN conda install mamba -n base -c conda-forge
-RUN mamba env create --prefix ${HOME}/conda/envs/cenv -f ${HOME}/tmp/environment.yml
-RUN rm ${HOME}/tmp/environment.yml
-# Set installed Conda env as default:
-ENV CONDA_DEFAULT_ENV cenv
-ENV PATH ${HOME}/conda/envs/cenv/bin:$PATH
-RUN echo $PATH
-RUN ls -ltra ${HOME}/conda/envs/cenv/bin
-
-# clean-up  # USER root
-RUN conda clean -atipy
-RUN rm -rf /tmp/*
-
-RUN python -V
 # export the conda path to force container_env since .bashrc necessarily
 # sourced when when the image is used
 # ENV PATH ${HOME}/conda/envs/container_env/bin:$PATH
 # ENV CONDA_DEFAULT_ENV container_env
 # ENV CONDA_PREFIX ${HOME}/conda/envs/container_env
 
+# Set up matplotlib requirements
+ENV MPLCONFIGDIR ${HOME}/.cache/matplotlib
+################################################################################
+
+
 ############################ Setup: R packages #################################
+# Set the R libs
+# NOTE: As of 2022-05-27, none of the R libraries are set in the Docker image.
+#       R raised errors when doing
+#       ENV R_LIBS /usr/local/lib/R/library:/usr/lib/R/library:${R_LIBS}
+#       ...which would preserve any values of ${R_LIBS} in the future
+#       The error is raised when ${R_LIBS} = "" and trailing : is at the end
+#       of the path. An if, then else bash clause did not solve the issue
+#       because Docker RUN export VAR do not track with the image.
+#       The easiest workaround for all of this was to hard code these ENV vars.
+#       WARNING: This may cause issues in the future.
+ENV R_LIBS /usr/local/lib/R/library:/usr/lib/R/library
+ENV R_LIBS_SITE /usr/local/lib/R/site-library/:/usr/lib/R/site-library
+ENV R_LIBS_USER ${HOME}/R/x86_64-pc-linux-gnu-library/4.2
+
+# NOTE: Renv expects us to be in the ${HOME}
+WORKDIR ${HOME}
+
+# Need to be root for library install in main R library
+USER root
+RUN R --vanilla -e "install.packages('renv', repos = c(CRAN = 'https://cloud.r-project.org'))"
+
+# Now continue to build the renv as the user
+#USER ${NB_USER}
+
+# Copy renv information from local directory
 COPY renv.lock ${HOME}/tmp/renv.lock
 
-# R package xml2 does not install - amend configure file according to
-# https://www.programmersought.com/article/12136751134/
-# COPY xml2-config.patch ${HOME}/tmp/xml2-config.patch
-# RUN wget https://cran.r-project.org/src/contrib/xml2_1.3.2.tar.gz \
-#  && tar zxvf xml2_1.3.2.tar.gz \
-#  && patch xml2/configure ${HOME}/tmp/xml2-config.patch \
-#  && R CMD INSTALL ./xml2
+# Install the packages
+# NOTE: For Rhtslib, need to run `apt-get install libbz2-dev liblzma-dev`
+# NOTE: For rgeos (SeuratObject), need to run `apt-get install libgeos-dev`
+# NOTE: The below commands give access to default libraries and configs
+#       in the rocker image. Below they are set in R, but we set them in
+#       environment variables.
+#       options(renv.config.user.profile = T)
+#       options(renv.config.user.library = T)
+#       options(renv.config.external.libraries = .libPaths())
+ENV RENV_CONFIG_USER_PROFILE TRUE
+ENV RENV_CONFIG_USER_LIBRARY TRUE
+ENV RENV_CONFIG_EXTERNAL_LIBRARIES ${R_LIBS_USER}:${R_LIBS_SITE}:${R_LIBS}
+ENV RENV_CONSENT TRUE
+#RUN echo "R_LIBS ${R_LIBS}" && \
+#    echo "R_LIBS_SITE ${R_LIBS_SITE}" && \
+#    echo "R_LIBS_USER ${R_LIBS_USER}" && \
+#    echo "RENV_CONFIG_EXTERNAL_LIBRARIES ${RENV_CONFIG_EXTERNAL_LIBRARIES}"
+# NOTE: Dropped the below command because not necessary
+#       echo "renv::init(bare = F, force = T)" >> ${HOME}/tmp/run.R && \
+# NOTE: Dropped the below command because with R_LIBS, R_LIBS_SITE, and
+#       R_LIBS_USER set, the renv does not need to be activated. R knows it
+#       automatically.
+#       echo "renv::activate()" >> ${HOME}/tmp/run.R
+RUN echo "library(renv)" > ${HOME}/tmp/run.R && \
+    echo "options(renv.consent = T)" >> ${HOME}/tmp/run.R && \
+    echo "renv::restore(lockfile=\"${HOME}/tmp/renv.lock\", prompt = F)" >> ${HOME}/tmp/run.R
 
-RUN mkdir -p ${HOME}/tmp/renv/local && \
-   echo "library(renv)" > ${HOME}/tmp/run.R && \
-   echo "renv::restore(lockfile=\"${HOME}/tmp/renv.lock\", prompt=F)" >> ${HOME}/tmp/run.R
-
+# Install the packages
+#RUN cat ${HOME}/tmp/run.R
 RUN Rscript ${HOME}/tmp/run.R
-RUN rm ${HOME}/tmp/renv.lock
+#RUN cat .Rprofile
+
+# Clear out files no longer required
+RUN rm -fr ${HOME}/.cache/R/renv/source  # Clear out renv tarballs
+#RUN R -e "library(optparse)"  # Test the R install
 ################################################################################
+
 
 ############################ Setup: cleanup ####################################
 # clear tmp if there is anything in there...
 USER root
-RUN rm -rf ${HOME}/tmp
-RUN rm -rf /tmp/*
+RUN rm -rf ${HOME}/tmp && rm -rf /tmp/*
 ################################################################################
 
 

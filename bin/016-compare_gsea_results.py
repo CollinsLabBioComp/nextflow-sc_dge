@@ -163,6 +163,7 @@ def main():
     output_file = options.output_file
 
     df = pd.read_csv(file, sep='\t', low_memory=False)
+    df = df.loc[~pd.isna(df['pvalue'])] # filter out unconverged gene sets
 
     # Add a key based on columns to compare (e.g., differential expression
     # method, condition, covariates)

@@ -6,7 +6,7 @@ __version__ = '0.0.1'
 
 import argparse
 import os
-from distutils.version import LooseVersion
+from packaging.version import Version
 import scipy
 import scipy.io
 import gzip
@@ -49,7 +49,7 @@ def convert_h5ad_R(
 
     # Get compression opts for pandas
     compression_opts = 'gzip'
-    if LooseVersion(pd.__version__) > '1.0.0':
+    if Version(pd.__version__) > Version('1.0.0'):
         compression_opts = dict(method='gzip', compresslevel=9)
 
     # Save the barcodes.
@@ -105,7 +105,7 @@ def convert_h5ad_R(
 
     # Save the  matrix
     out_mtx = adata.X.transpose()
-    if not isinstance(out_mtx, scipy.sparse.csr.csr_matrix):
+    if not isinstance(out_mtx, scipy.sparse.csr_matrix):
         out_mtx = scipy.sparse.csr_matrix(out_mtx)
     out_f = os.path.join(
         out_dir,
@@ -157,7 +157,7 @@ def write_metadata(
 
     # Get compression opts for pandas
     compression_opts = 'gzip'
-    if LooseVersion(pd.__version__) > '1.0.0':
+    if Version(pd.__version__) > Version('1.0.0'):
         compression_opts = dict(method='gzip', compresslevel=9)
 
     # Now write cell metadata as TSV

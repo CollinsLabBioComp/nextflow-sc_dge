@@ -12,7 +12,7 @@ differential_expression:
                 variable_continuous or variable_discrete.'
         mean_cp10k_filter: 1
         value:
-            - method: 'mast::singlecell::bayesglm'
+            - method: 'deseq::pseudobulk::parametric'
               formula: '~ sex + disease_status'
               variable_target: 'disease_status'
               variable_continuous: ''
@@ -20,25 +20,11 @@ differential_expression:
               variable_discrete_level: 'sex::male,female;;disease_status::healthy,disease'
               pre_filter_genes: true
               proportion_covariate_column: 'cell_type'
-              include_proportion_covariates: true
-            - method: 'edger::singlecell::glmQLFit'
-              formula: '~ disease_status + sex + age'
-              variable_target: 'disease_status'
-              variable_continuous: 'age'
-              variable_discrete: 'sex,disease_status'
-              variable_discrete_level: 'sex::male,female;;disease_status::healthy,disease'
-              pre_filter_genes: false
-              proportion_covariate_column: 'cell_type'
               include_proportion_covariates: false
-            - method: 'deseq::pseudobulk::glmGamPoi'
-              formula: '~ sex + disease_status + age + disease_status:sex'
-              variable_target: 'disease_status:sex'
-              variable_continuous: 'age'
-              variable_discrete: 'sex,disease_status'
-              variable_discrete_level: 'sex::male,female;;disease_status::healthy,disease'
-              pre_filter_genes: true
-              proportion_covariate_column: 'cell_type'
-              include_proportion_covariates: false
+              ruvseq: false
+              ruvseq_n_empirical_genes: 0.5
+              ruvseq_min_pvalue: 0.25
+              ruvseq_k: 5
     de_merge_config:
         ihw_correction:
             run_process: true
@@ -54,15 +40,23 @@ differential_expression:
                 in cluster 2, it will be dropped from cluster 1 but not cluster
                 2.'
             value:
-                - 0.0
-                - 0.25
-    fgsea_config:
+                - 5.0
+    goenrich_config:
         run_process: true
-        description: 'Parameters to run fGSEA.'
-        sample_size: 101
-        score_type: 'std'
         value:
-            - min_set_size: 1
-              max_set_size: Inf
-              eps: 0
-              database: 'c2.cp.reactome,c2.cp.kegg,c5.bp,c5.cc,c5.mf'
+          - go_terms: 'MF'
+            clustering_method: 'louvain'
+    gsea_config:
+        description: 'Parameters to run gene set analyses.'
+        fgsea_parameters:
+            run_process: true
+            value:
+              - sample_size: 101
+                score_type: 'std'
+                min_set_size: 1
+                max_set_size: Inf
+                eps: 0
+                database: 'c2.cp.kegg'
+        gsea_summarize_parameters:
+            - distance_metric: 'kappa'
+              clustering_method: 'louvain'

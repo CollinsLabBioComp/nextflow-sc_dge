@@ -35,7 +35,7 @@ See [environment README](env/README.md) to set up environment. Once the environm
 source activate sc_diff_expr
 ```
 
-Alternatively, if using singularity or docker, one can pull the image from [henryjt/sc_nf_diffexpression:1.0.0](https://hub.docker.com/layers/196450988/henryjt/sc_nf_diffexpression/1.0.0/images/sha256-da59d053c402d3ba2f610488a91e5dead9a2821ac0bb565723ca5c9bef4f1d5e?context=repo).
+Alternatively, if using singularity or docker, one can pull the image from [letaylor/sc_nf_diffexpression:latest](https://hub.docker.com/layers/sc_nf_diffexpression/letaylor/sc_nf_diffexpression/latest/images/sha256-3e37b79b64aa5b899f0bbb683e206a777f9d4afc9216968a2fe5dac1785fbfe4?context=explore).
 
 
 ## 2. Prepare the input files

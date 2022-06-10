@@ -117,6 +117,12 @@ process run_differential_expression {
             cmd__options = "${cmd__options} --include_proportion_covariates"
             formula_clean = "${formula_clean}__proportion_covs-${prop_cov_col}"
         }
+        if (model.ruvseq) {
+            cmd__options = "${cmd__options} --run_ruvseq"
+            formula_clean = "${formula_clean}__ruvseq-ngenes=${model.ruvseq_n_empirical_genes}"
+            formula_clean = "${formula_clean}_min_pvalue=${model.ruvseq_min_pvalue}"
+            formula_clean = "${formula_clean}_kfactors=${model.ruvseq_k}"
+        }
         outdir = "${outdir_prev}/differential_expression/${variable_target_clean}"
         outdir = "${outdir}/cell_label=${cell_label}"
         outdir = "${outdir}/method=${model.method}___formula=${formula_clean}"
@@ -172,6 +178,9 @@ process run_differential_expression {
             --method "${model.method}" \
             --method_script $baseDir/bin/${method_script} \
             --mean_cp10k_filter ${mean_cp10k_filter} \
+            --ruvseq_n_empirical_genes ${model.ruvseq_n_empirical_genes} \
+            --ruvseq_min_pvalue ${model.ruvseq_min_pvalue} \
+            --ruvseq_k_factors ${model.ruvseq_k} \
             --out_file "${outfile}" \
             --cores_available ${task.cpus} \
             ${cmd__varcast} \
@@ -285,8 +294,8 @@ process serialize_de_files {
         process_info = "${process_info}, ${task.memory} (memory)"
         """
         echo "serialize_de_files: ${process_info}"
-        ln --physical ${de_results_unfiltered} ${runid}-${de_results_unfiltered}
-        ln --physical ${de_results_filtered} ${runid}-${de_results_filtered}
+        cp ${de_results_unfiltered} ${runid}-${de_results_unfiltered}
+        cp ${de_results_filtered} ${runid}-${de_results_filtered}
         """
 }
 
@@ -433,10 +442,10 @@ process run_fgsea {
             file(de_results_filtered),
             val(outdir_prev)
         )
-        val(sample_size)
-        val(score_type)
         each model
         each signed
+        file(gene_matrix)
+        file(gene_info)
 
     output:
         tuple(
@@ -457,8 +466,8 @@ process run_fgsea {
     script:
         runid = random_hex(16)
         // Generate key to represent run to group results
-        fgsea_key = "sample_size=${sample_size}"
-        fgsea_key = "${fgsea_key}::score_type=${score_type}"
+        fgsea_key = "sample_size=${model.sample_size}"
+        fgsea_key = "${fgsea_key}::score_type=${model.score_type}"
         fgsea_key = "${fgsea_key}::min_set_size=${model.min_set_size}"
         fgsea_key = "${fgsea_key}::max_set_size=${model.max_set_size}"
         fgsea_key = "${fgsea_key}::eps=${model.eps}"
@@ -484,13 +493,13 @@ process run_fgsea {
             --de_results ${de_results_filtered} \
             --group_var 'coef_value' \
             --ranking_var 'test_statistic' \
-            --sample_size ${sample_size} \
-            --score_type ${score_type} \
+            --sample_size ${model.sample_size} \
+            --score_type ${model.score_type} \
             --min_set_size ${model.min_set_size} \
             --max_set_size ${model.max_set_size} \
             --eps '${model.eps}' \
-            --gsets_gene_matrix '$baseDir/data/gene_set_genes.tsv.gz' \
-            --gsets_info_file '$baseDir/data/gene_set_info.tsv.gz' \
+            --gsets_gene_matrix ${gene_matrix} \
+            --gsets_info_file ${gene_info} \
             --database '${model.database}' \
             --n_cores ${task.cpus} \
             --output_file '${outfile}' \
@@ -544,7 +553,7 @@ process serialize_gsea_files {
         """
         echo "serialize_gsea_results: ${process_info}"
         echo "publish_directory: ${outdir}"
-        ln --physical ${results_file} ${runid}-${results_file}
+        cp ${results_file} ${runid}-${results_file}
         """
 }
 
@@ -645,6 +654,95 @@ process plot_gsea_results {
         """
 }
 
+
+process summarize_gsea_results {
+    // Summarize merged GSEA data frame
+    // ------------------------------------------------------------------------
+    scratch false        // use tmp directory
+    echo echo_mode       // echo output from script
+
+    publishDir  path: "${outdir}",
+                saveAs: {filename -> filename.replaceAll("${runid}-", "")},
+                mode: "${task.publish_mode}",
+                overwrite: "true"
+
+    input:
+        val(outdir_prev)
+        tuple(
+            val(condition),
+            path(merged_df)
+        )
+        each params
+
+    output:
+        val(outdir, emit: outdir)
+        path("${outfile}-*.tsv.gz")
+        path("*.pdf")
+
+    script:
+        runid = random_hex(16)
+        outdir = "${outdir_prev}/differential_expression/${condition}/"
+        outfile = "${condition}_merged_gsea_summary"
+        process_info = "${runid} (runid)"
+        process_info = "${process_info}, ${task.cpus} (cpus)"
+        process_info = "${process_info}, ${task.memory} (memory)"
+        """
+        echo "summarize_gsea_results: ${process_info}"
+        echo "publish_directory: ${outdir}"
+        017-summarize_fgsea.R \
+            --gsea_results ${merged_df} \
+            --gsets_gene_matrix '$baseDir/data/gene_set_genes.tsv.gz' \
+            --term_distance_metric ${params.distance_metric} \
+            --clustering_method ${params.clustering_method} \
+            --output_file_tag '${outfile}'
+        """
+}
+
+
+process run_goenrich {
+    // Run GO Enrich on DGE results
+    // ------------------------------------------------------------------------
+    scratch false        // use tmp directory
+    echo echo_mode       // echo output from script
+
+    publishDir  path: "${outdir}",
+                saveAs: {filename -> filename.replaceAll("${runid}-", "")},
+                mode: "${task.publish_mode}",
+                overwrite: "true"
+
+    input:
+        val(outdir_prev)
+        tuple(
+            val(condition),
+            path(merged_df)
+        )
+        each params
+
+    output:
+        val(outdir, emit: outdir)
+        path("${outfile}-*.tsv.gz")
+        path("*.pdf")
+
+    script:
+        runid = random_hex(16)
+        outdir = "${outdir_prev}/differential_expression/${condition}/"
+        outfile = "${condition}_goenrich_results"
+        process_info = "${runid} (runid)"
+        process_info = "${process_info}, ${task.cpus} (cpus)"
+        process_info = "${process_info}, ${task.memory} (memory)"
+        """
+        echo "run_goenrich: ${process_info}"
+        echo "publish_directory: ${outdir}"
+        015-run_goenrich.R \
+            --dge_results ${merged_df} \
+            --go_ontology ${params.go_terms} \
+            --clustering_method ${params.clustering_method} \
+            --output_file_tag '${outfile}' \
+            --verbose
+        """
+}
+
+
 workflow wf__differential_expression {
     take:
         outdir
@@ -654,7 +752,8 @@ workflow wf__differential_expression {
         model
         de_merge_config
         de_plot_config
-        fgsea_config
+        goenrich_config
+        gsea_config
     main:
         // Get a list of all of the cell types
         get_cell_label_list(
@@ -736,20 +835,26 @@ workflow wf__differential_expression {
             de_plot_config.mean_expression_filter.value
         )
 
-        // Run fGSEA on DE results
-        if (fgsea_config.run_process) {
-            run_fgsea(
-                de_results,
-                fgsea_config.sample_size,
-                fgsea_config.score_type,
-                fgsea_config.value,
-                ["unsigned", "signed"]
+        // First run GO Enrich on merged DGE results
+        if (goenrich_config.run_process) {
+            run_goenrich(
+                outdir,
+                merge_de_dataframes.out.merged_results,
+                goenrich_config.value
             )
         }
 
-        // Combine results of different GSEA methods
+        // Run fGSEA on DE results
         gsea_results = null
-        if (fgsea_config.run_process) {
+        if (gsea_config.fgsea_parameters.run_process) {
+            run_fgsea(
+                de_results,
+                gsea_config.fgsea_parameters.value,
+                ["unsigned", "signed"],
+                file("$baseDir/data/gene_set_genes.tsv.gz"),
+                file("$baseDir/data/gene_set_info.tsv.gz")
+            )
+
             gsea_results = run_fgsea.out.results
         }
 
@@ -799,6 +904,13 @@ workflow wf__differential_expression {
             plot_gsea_results(
                 outdir,
                 merge_gsea_dataframes.out.merged_results
+            )
+
+            // Summarize GSEA results across all models
+            summarize_gsea_results(
+                outdir,
+                merge_gsea_dataframes.out.merged_results,
+                gsea_config.gsea_summarize_parameters
             )
         }
 
