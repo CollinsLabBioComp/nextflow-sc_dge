@@ -329,6 +329,12 @@ run_analysis <- function(param) {
             dplyr::mutate(
                 group_direction = if_else(test_statistic > 0, "up", "down")
             )
+        
+        if (nrow(df_dge_theme) == 0) {                               
+            print("No DGE results for this model. Exiting.")                                                                                      
+            return(df_dge_i)
+        }                                
+
 
         # https://yulab-smu.top/biomedical-knowledge-mining-book/clusterprofiler-comparecluster.html
         # Perform biological theme comparison.
