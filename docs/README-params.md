@@ -40,7 +40,7 @@ Parameters are applied within each cell type as denoted by `anndata_cell_label`
 - `de_plot_config`: Parameters for plotting differential expression results
   - `mean_expression_filter`: List of mean expression thresholds to drop for plots for each group in `anndata_cell_label`. For example: if gene A expression is 0 counts in cluster 1 and 10 in cluster 2, it will be dropped from cluster 1 but not cluster 2.
 - `goenrich_config`:
-  - `go_terms`: Ontology terms: MF (Molecular Function), CC (Cellular Component), BP (Biological Process)
+  - `go_terms`: Ontology terms: MF (Molecular Function), CC (Cellular Component), BP (Biological Process). Multiple terms can be specified, separated by commas (e.g., 'BP,MF,CC').
   - `clustering_method`: Method to cluster terms. Options: "binary_cut", "louvain", "mclust"
 - `gsea_config`: Parameters for running gene set analyses
   - `fgsea_parameters`: List of alternate configurations for fgsea
