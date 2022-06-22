@@ -720,25 +720,28 @@ process run_goenrich {
 
     output:
         val(outdir, emit: outdir)
-        path("${outfile}-*.tsv.gz")
+        path("${outfile}*.tsv.gz")
         path("*.pdf")
 
     script:
         runid = random_hex(16)
         outdir = "${outdir_prev}/differential_expression/${condition}/"
         outfile = "${condition}_goenrich_results"
+        pathways = params.go_terms.replace(",", " ")
         process_info = "${runid} (runid)"
         process_info = "${process_info}, ${task.cpus} (cpus)"
         process_info = "${process_info}, ${task.memory} (memory)"
         """
         echo "run_goenrich: ${process_info}"
         echo "publish_directory: ${outdir}"
-        015-run_goenrich.R \
-            --dge_results ${merged_df} \
-            --go_ontology ${params.go_terms} \
-            --clustering_method ${params.clustering_method} \
-            --output_file_tag '${outfile}' \
-            --verbose
+        for pathway in ${pathways}; do
+          015-run_goenrich.R \
+              --dge_results ${merged_df} \
+              --go_ontology \$pathway \
+              --clustering_method ${params.clustering_method} \
+              --output_file_tag "${outfile}__\${pathway}_terms" \
+              --verbose
+        done
         """
 }
 
