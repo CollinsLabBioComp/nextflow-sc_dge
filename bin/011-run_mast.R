@@ -158,6 +158,7 @@ DE_calculate_dge <- function(
     as.data.frame()
 
   # Add other necessary items
+  fcHurdle$std_err <- NA
   fcHurdle$test_statistic_type <- "z_score"
 
   return(fcHurdle)

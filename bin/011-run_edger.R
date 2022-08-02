@@ -98,6 +98,7 @@ DE_calculate_dge <- function(
     )
 
   # Add other columns to dataframe
+  de_genes$std_err <- NA
   de_genes$gene <- rownames(de_genes)
   de_genes$gene_symbol <- feature_metadata[de_genes$gene, ]$gene_symbol
   de_genes$test_statistic_type <- "f_score"

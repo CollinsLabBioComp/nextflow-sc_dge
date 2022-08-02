@@ -881,6 +881,21 @@ if (nrow(test_data) == 0) {
         counts_matrix
       )
       
+      ruv_file <- gzfile(
+        sprintf("%s_ruvseq_factors.tsv.gz", output_file_base),
+        "w",
+        compression = 9
+      )
+      write.table(
+        x=ruvseq_factors,
+        file=ruv_file,
+        sep="\t",
+        col.names=T,
+        row.names=T,
+        quote=F
+      )
+      close(ruv_file)
+      
       # Now update data and re-run
       metadata <- cbind(metadata, ruvseq_factors)
       formula <- update(
@@ -918,7 +933,7 @@ if (nrow(test_data) == 0) {
     }
 
     ## Get only the columns we want
-    cols_retain <- c("gene", "gene_symbol", "log2fc", "pvalue",
+    cols_retain <- c("gene", "gene_symbol", "log2fc", "std_err", "pvalue",
                      "test_statistic", "test_statistic_type")
     rez <- rez[, cols_retain] # NOTE: must be data.frame
 
