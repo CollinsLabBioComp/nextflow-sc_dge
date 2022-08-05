@@ -73,6 +73,7 @@ process run_differential_expression {
             optional: true,
             emit: results
         )
+        path("*_ruvseq_factors.tsv.gz") optional true
         path("plots/*.png") optional true
         path("plots/*.pdf") optional true
 

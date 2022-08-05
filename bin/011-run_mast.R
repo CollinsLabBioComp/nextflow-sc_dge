@@ -158,7 +158,8 @@ DE_calculate_dge <- function(
     as.data.frame()
 
   # Add other necessary items
-  fcHurdle$std_err <- NA
+  fcHurdle$std_err <- (fcHurdle$ci.hi - fcHurdle$ci.lo) / 3.92 # SE from 95% CI
+                                                            # 95% CI is default
   fcHurdle$test_statistic_type <- "z_score"
 
   return(fcHurdle)
