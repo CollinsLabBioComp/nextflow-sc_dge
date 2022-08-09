@@ -878,13 +878,15 @@ if (nrow(test_data) == 0) {
         counts_matrix
       )
       
+      ruvseq_factors__formatted <- ruvseq_factors
+      rownames(ruvseq_factors__formatted) <- rownames(metadata)
       ruv_file <- gzfile(
         sprintf("%s_ruvseq_factors.tsv.gz", output_file_base),
         "w",
         compression = 9
       )
       write.table(
-        x=ruvseq_factors,
+        x=ruvseq_factors__formatted,
         file=ruv_file,
         sep="\t",
         col.names=T,
