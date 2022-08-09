@@ -859,9 +859,6 @@ if (nrow(test_data) == 0) {
       return(get_empty_df())
     }
     
-    cols_retain <- c("gene", "gene_symbol", "log2fc", "pvalue",
-                     "test_statistic", "test_statistic_type")
-    
     # If RUVseq, perform
     if (arguments$options$run_ruvseq) {
       ruvseq_n_emp <- arguments$options$ruvseq_n_empirical_genes
