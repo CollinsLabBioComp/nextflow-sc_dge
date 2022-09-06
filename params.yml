@@ -71,7 +71,7 @@ differential_expression:
     goenrich_config:
         run_process: true
         value:
-          - go_terms: 'MF'
+          - go_terms: 'MF,CC,BP'
             clustering_method: 'louvain'
     gsea_config:
         description: 'Parameters to run gene set analyses.'

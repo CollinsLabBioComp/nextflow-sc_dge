@@ -131,6 +131,7 @@ DE_calculate_dge <- function(
     as.data.frame(.) %>%
     dplyr::rename(
       log2fc = log2FoldChange,
+      std_err = lfcSE,
       fdr = padj,
       test_statistic = stat ## Use test_statistic for downstream anaylsis
     )

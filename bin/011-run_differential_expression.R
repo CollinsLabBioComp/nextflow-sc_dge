@@ -859,9 +859,6 @@ if (nrow(test_data) == 0) {
       return(get_empty_df())
     }
     
-    cols_retain <- c("gene", "gene_symbol", "log2fc", "pvalue",
-                     "test_statistic", "test_statistic_type")
-    
     # If RUVseq, perform
     if (arguments$options$run_ruvseq) {
       ruvseq_n_emp <- arguments$options$ruvseq_n_empirical_genes
@@ -880,6 +877,23 @@ if (nrow(test_data) == 0) {
         ruvseq_k,
         counts_matrix
       )
+      
+      ruvseq_factors__formatted <- ruvseq_factors
+      rownames(ruvseq_factors__formatted) <- rownames(metadata)
+      ruv_file <- gzfile(
+        sprintf("%s_ruvseq_factors.tsv.gz", output_file_base),
+        "w",
+        compression = 9
+      )
+      write.table(
+        x=ruvseq_factors__formatted,
+        file=ruv_file,
+        sep="\t",
+        col.names=T,
+        row.names=T,
+        quote=F
+      )
+      close(ruv_file)
       
       # Now update data and re-run
       metadata <- cbind(metadata, ruvseq_factors)
@@ -918,7 +932,7 @@ if (nrow(test_data) == 0) {
     }
 
     ## Get only the columns we want
-    cols_retain <- c("gene", "gene_symbol", "log2fc", "pvalue",
+    cols_retain <- c("gene", "gene_symbol", "log2fc", "std_err", "pvalue",
                      "test_statistic", "test_statistic_type")
     rez <- rez[, cols_retain] # NOTE: must be data.frame
 
