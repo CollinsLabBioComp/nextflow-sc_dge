@@ -836,11 +836,11 @@ workflow wf__differential_expression {
             de_results_merged
         )
         // Basic plots of the differential expression results across all models
-        // plot_merged_dge(
-        //    outdir,
-        //    merge_de_dataframes.out.merged_results,
-        //    de_plot_config.mean_expression_filter.value
-        //)
+        plot_merged_dge(
+            outdir,
+            merge_de_dataframes.out.merged_results,
+            de_plot_config.mean_expression_filter.value
+        )
 
         // First run GO Enrich on merged DGE results
         if (goenrich_config.run_process) {
