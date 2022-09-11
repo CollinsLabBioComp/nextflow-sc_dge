@@ -77,11 +77,16 @@ optionList <- list(
                         help = "Key to use to determine sample source of cells."
   ),
 
-  optparse::make_option(c("-l", "--mean_cp10k_filter"),
+  optparse::make_option(c("-l", "--filter_threshold"),
                         type = "double",
                         default = 1,
-                        help = "Filter to remove genes with fewer cp10k
-                        averages."
+                        help = "Filter to remove genes with fewer cp10k/counts
+                        averages. See option `--filter_type`"
+  ),
+  optparse::make_option(c("-x", "--filter_type"),
+                        type = "character",
+                        default = 1,
+                        help = "Either 'counts' or 'cp10k'"
   ),
 
   optparse::make_option(c("-m", "--pre_filter_genes"),
@@ -553,7 +558,8 @@ get_empty_df <- function() {
 ######################## Read Data & Manipulate ################################
 verbose <- arguments$options$verbose
 output_file_base <- arguments$options$out_file
-mean_filter <- arguments$options$mean_cp10k_filter
+mean_filter <- arguments$options$filter_threshold
+filter_type <- arguments$options$filter_type
 formula_str <- arguments$options$formula
 
 # Read all data in
@@ -1006,12 +1012,18 @@ if (nrow(de_results) > 0) {
 
   # Filter
   if (verbose) {
-    cat(sprintf("Filtering out genes with mean cp10k expression < %s...\n",
+    cat(sprintf("Filtering out genes with mean %s < %s...\n",
+		filter_type,
                 mean_filter))
   }
   n_genes_before <- nrow(de_results)
-  de_results <- de_results[which(de_results$mean_cp10k > mean_filter), ]
-
+  print(filter_type)
+  # Removed because it wasn't working right
+  if (filter_type == "cp10k") {
+  	de_results <- de_results[which(de_results$mean_cp10k > mean_filter), ]
+  } else if (filter_type == "counts") {
+  	de_results <- de_results[which(de_results$mean_counts > mean_filter), ]
+  }
   if (verbose) {
     cat(sprintf("Done. Filtered %s genes.\n",
                 n_genes_before - nrow(de_results)))

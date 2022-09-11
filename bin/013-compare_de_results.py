@@ -64,7 +64,7 @@ def plot_qq(
     # the axes)
     axis_max = max(df['pval_neglog10'])
 
-    if facet_var is None:
+    if facet_var is None or len(df[facet_var].unique()) < 2:
         pvals = df.groupby(by=color_var).apply(
             calculate_expected_pval
         ).reset_index(level=color_var, drop=True)
