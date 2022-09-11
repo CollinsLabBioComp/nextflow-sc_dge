@@ -93,13 +93,6 @@ DE_calculate_dge <- function(
 
   ## Defaults are taken from DESeq2 SC recommendations:
   # https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#recommendations-for-single-cell-analysis
-  print("Estimating dispersions")
-  # Added by Caleb, Sept 7 2022
-  dds <- estimateSizeFactors(dds)
-  dds <- estimateDispersionsGeneEst(dds)
-  print("Saving estimates")
-  dispersions(dds) <- mcols(dds)$dispGeneEst
-
   if (TRUE) {
 	  de_results <- DESeq2::DESeq(
 	    dds,
@@ -116,6 +109,16 @@ DE_calculate_dge <- function(
 	  )
 
   } else {
+	# Added by Caleb, Sept 7 2022
+	#   This is an alternative curvefitting method in case 
+	#   the dispersion estimates are < 2 orders of magnitude from
+	#   the minimum. (i.e. the target phenotype has a small range)
+	#   Turns out there was an error in my calculation and this isn't
+	#   needed anymore, but I left it in as an option.
+	dds <- estimateSizeFactors(dds)
+	dds <- estimateDispersionsGeneEst(dds)
+	dispersions(dds) <- mcols(dds)$dispGeneEst
+
   	de_results <- DESeq2::nbinomLRT(
 	    dds,
 	    reduced = reduced_des,
