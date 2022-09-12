@@ -1023,6 +1023,8 @@ if (nrow(de_results) > 0) {
   	de_results <- de_results[which(de_results$mean_cp10k > mean_filter), ]
   } else if (filter_type == "counts") {
   	de_results <- de_results[which(de_results$mean_counts > mean_filter), ]
+  } else { 
+	stop(sprintf("Error: invalid argument for `filter_type`: expected 'cp10k' or 'counts', got %s", filter_type))
   }
   if (verbose) {
     cat(sprintf("Done. Filtered %s genes.\n",
