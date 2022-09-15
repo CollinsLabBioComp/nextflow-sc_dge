@@ -64,7 +64,7 @@ def plot_qq(
     # the axes)
     axis_max = max(df['pval_neglog10'])
 
-    if facet_var is None:
+    if facet_var is None or len(df[facet_var].unique()) < 2:
         pvals = df.groupby(by=color_var).apply(
             calculate_expected_pval
         ).reset_index(level=color_var, drop=True)
@@ -203,6 +203,9 @@ def main():
     small_value[filt] = np.nanmin(df['pvalue'][np.invert(filt)])  # ** 1.5
     df['pval_neglog10'] = np.log10(df['pvalue'] + small_value) * -1
     df['pval_signedneglog10'] = df['pval_neglog10'] * np.sign(df['log2fc'])
+    
+    # Drop all rows with nans
+    df.dropna(axis=0, inplace=True)
 
     # For each combination of columns...
     # 1. Plot p-value distribution

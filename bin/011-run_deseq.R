@@ -61,6 +61,8 @@ DE_calculate_dge <- function(
 
   ## Grab design and remove the `test_var`
   des <- design(dds)
+  
+
   reduced_des <- des[,-which(colnames(des) == coef_value), drop=F]
 
   ## Set parallel cores
@@ -91,20 +93,38 @@ DE_calculate_dge <- function(
 
   ## Defaults are taken from DESeq2 SC recommendations:
   # https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#recommendations-for-single-cell-analysis
-  de_results <- DESeq2::DESeq(
-    dds,
-    test = "LRT",
-    fitType = de_method,
-    sfType = sfType,
-    reduced = reduced_des,
-    quiet = !verbose,
-    minReplicatesForReplace = minReplicatesForReplace,
-    useT = T, ## Shouldn't matter. Only used for Wald
-    minmu = minmu,
-    parallel = par,
-    BPPARAM = BiocParallel::MulticoreParam(n_cores)
-  )
+  if (TRUE) {
+	  de_results <- DESeq2::DESeq(
+	    dds,
+	    test = "LRT",
+	    fitType = de_method,
+	    sfType = sfType,
+	    reduced = reduced_des,
+	    quiet = !verbose,
+	    minReplicatesForReplace = minReplicatesForReplace,
+	    useT = T, ## Shouldn't matter. Only used for Wald
+	    minmu = minmu,
+	    parallel = par,
+	    BPPARAM = BiocParallel::MulticoreParam(n_cores)
+	  )
 
+  } else {
+	# Added by Caleb, Sept 7 2022
+	#   This is an alternative curvefitting method in case 
+	#   the dispersion estimates are < 2 orders of magnitude from
+	#   the minimum. (i.e. the target phenotype has a small range)
+	#   Turns out there was an error in my calculation and this isn't
+	#   needed anymore, but I left it in as an option.
+	dds <- estimateSizeFactors(dds)
+	dds <- estimateDispersionsGeneEst(dds)
+	dispersions(dds) <- mcols(dds)$dispGeneEst
+
+  	de_results <- DESeq2::nbinomLRT(
+	    dds,
+	    reduced = reduced_des,
+	    quiet = !verbose
+	    )
+  }
   # Get results
   rez <- DESeq2::results(
     de_results,

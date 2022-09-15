@@ -55,7 +55,8 @@ process run_differential_expression {
         path(anndata)
         val(cell_label_column)
         val(experiment_id)
-        val(mean_cp10k_filter)
+        val(filter_threshold)
+	val(filter_type)
         each cell_label
         each model
 
@@ -178,7 +179,8 @@ process run_differential_expression {
             --variable_target "${variable_target}" \
             --method "${model.method}" \
             --method_script $baseDir/bin/${method_script} \
-            --mean_cp10k_filter ${mean_cp10k_filter} \
+            --filter_threshold ${filter_threshold} \
+            --filter_type ${filter_type} \
             --ruvseq_n_empirical_genes ${model.ruvseq_n_empirical_genes} \
             --ruvseq_min_pvalue ${model.ruvseq_min_pvalue} \
             --ruvseq_k_factors ${model.ruvseq_k} \
@@ -347,7 +349,7 @@ process merge_de_dataframes {
         """
         echo "merge_de_dataframes: ${process_info}"
         echo "publish_directory: ${outdir}"
-        sleep 5m
+        sleep 15s
         merge_dataframes.py \
             --dataframe_keys '${result_keys}' \
             --dataframe_paths '${result_paths}' \
@@ -778,7 +780,8 @@ workflow wf__differential_expression {
             anndata,
             anndata_cell_label,
             experiment_key,
-            model.mean_cp10k_filter,
+            model.filter_threshold,
+	    model.filter_type,
             // '1',  // just run on first cluster for development
             cell_labels,  // run for all clusters for run time
             model.value
