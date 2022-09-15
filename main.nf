@@ -1,6 +1,10 @@
 #!/usr/bin/env nextflow
 
-nextflow.enable.dsl=2
+if (nextflow.version.matches('20.07.1+')) {
+    nextflow.enable.dsl=2
+} else {
+    nextflow.preview.dsl=2
+}
 
 VERSION = "0.0.1" // Do not edit, controlled by bumpversion.
 
