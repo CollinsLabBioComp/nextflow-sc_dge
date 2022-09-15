@@ -1,6 +1,6 @@
 #!/usr/bin/env nextflow
 
-if (nextflow.version.matches('20.07.1+')) {
+if (nextflow.version.matches('>= 20.07.1')) {
     nextflow.enable.dsl=2
 } else {
     nextflow.preview.dsl=2
