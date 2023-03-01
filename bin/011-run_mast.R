@@ -22,6 +22,7 @@ DE_calculate_dge <- function(
     sample_metadata,
     testing_var,
     coef_value,
+    coef_barcodes,
     formula,
     method = "singlecell::bayesglm",
     n_cores = 1,
@@ -161,6 +162,10 @@ DE_calculate_dge <- function(
   fcHurdle$std_err <- (fcHurdle$ci.hi - fcHurdle$ci.lo) / 3.92 # SE from 95% CI
                                                             # 95% CI is default
   fcHurdle$test_statistic_type <- "z_score"
+  
+  # Gathering distances
+  fcHurdle$cooks_d_max <- NA
+  fcHurdle$cooks_d_min <- NA
 
   return(fcHurdle)
 }

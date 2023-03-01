@@ -215,6 +215,7 @@ suppressPackageStartupMessages(source(arguments$options$method_script))
 #                              sample_metadata,
 #                              testing_var,
 #                              coef_value,
+#                              coef_barcodes,
 #                              formula,
 #                              method = "glmGamPoi",
 #                              n_cores = 1,
@@ -807,6 +808,7 @@ if (nrow(test_data) == 0) {
       strsplit(x=arguments$options$method, split="::", fixed=T)[[1]][-1],
       collapse = "::"
     )
+    barcodes <- strsplit(i["barcodes"], split="$$", fixed=T)[[1]]
 
     if (verbose) {
       cat(sprintf(
@@ -844,6 +846,7 @@ if (nrow(test_data) == 0) {
         sample_metadata = metadata,
         testing_var = testing_var,
         coef_value = i["alt_var"],
+        coef_barcodes = barcodes,
         formula = formula,
         n_cores = arguments$options$cores_available,
         method = de_method
@@ -910,6 +913,7 @@ if (nrow(test_data) == 0) {
           sample_metadata = metadata,
           testing_var = testing_var,
           coef_value = i["alt_var"],
+          coef_barcodes = barcodes,
           formula = formula,
           n_cores = arguments$options$cores_available,
           method = de_method
@@ -932,8 +936,10 @@ if (nrow(test_data) == 0) {
     }
 
     ## Get only the columns we want
-    cols_retain <- c("gene", "gene_symbol", "log2fc", "std_err", "pvalue",
-                     "test_statistic", "test_statistic_type")
+    cols_retain <- c(
+      "gene", "gene_symbol", "log2fc", "std_err", "pvalue", "test_statistic",
+      "test_statistic_type", "cooks_d_min", "cooks_d_max"
+    )
     rez <- rez[, cols_retain] # NOTE: must be data.frame
 
     ## Now assign necessary columns back to dataframe
@@ -962,7 +968,6 @@ if (nrow(test_data) == 0) {
     rez$ruvseq_k_factors <- ruvseq_k
 
     ## Get count averages
-    barcodes <- strsplit(i["barcodes"], split="$$", fixed=T)[[1]]
     rez$mean_counts <- Matrix::rowMeans(counts_matrix[rez$gene, barcodes])
     rez$mean_cp10k <- Matrix::rowMeans(cp10_matrix[rez$gene, barcodes])
     rez[[paste0("pct_", mean_filter, "cp10k")]] <- pct_exprs_n(

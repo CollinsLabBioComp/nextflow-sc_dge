@@ -6,6 +6,7 @@ suppressPackageStartupMessages(library(BiocParallel))
 suppressPackageStartupMessages(library(glmGamPoi))
 suppressPackageStartupMessages(library(Matrix))
 suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(stats))
 ################################################################################
 
 ################################ Functions #####################################
@@ -29,6 +30,7 @@ DE_calculate_dge <- function(
     sample_metadata,
     testing_var,
     coef_value,
+    coef_barcodes,
     formula,
     method = "singlecell::glmGamPoi",
     n_cores = 1,
@@ -140,7 +142,24 @@ DE_calculate_dge <- function(
   rez$gene <- rownames(rez)
   rez$gene_symbol <- feature_metadata[rez$gene, ]$gene_symbol
   rez$test_statistic_type <- "LRTStatistic"
-
+  
+  # Gathering distances
+  cooks <- assays(de_results)[["cooks"]]
+  cooks <- cooks[rez$gene, coef_barcodes]
+  
+  degf <- ncol(des)
+  cooks_pvals <- apply(cooks, 1, function(x) {
+    return(stats::pf(
+      x,
+      degf,
+      length(coef_barcodes) - degf,
+      lower.tail = FALSE
+    ))
+  })
+  
+  rez$cooks_d_max <- apply(cooks, 2, function(x) max(x, na.rm=T))
+  rez$cooks_d_pval_min <- apply(cooks_pvals, 2, function(x) min(x, na.rm=T))
+  
   return(rez)
 }
 

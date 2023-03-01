@@ -25,6 +25,7 @@ DE_calculate_dge <- function(
     sample_metadata,
     testing_var,
     coef_value,
+    coef_barcodes,
     formula,
     method = "singlecell::glmQLFit",
     n_cores = 1,
@@ -102,6 +103,11 @@ DE_calculate_dge <- function(
   de_genes$gene <- rownames(de_genes)
   de_genes$gene_symbol <- feature_metadata[de_genes$gene, ]$gene_symbol
   de_genes$test_statistic_type <- "f_score"
+  
+  # Gathering distances
+  de_genes$cooks_d_max <- NA
+  de_genes$cooks_d_min <- NA
+  
   return(de_genes)
 }
 
