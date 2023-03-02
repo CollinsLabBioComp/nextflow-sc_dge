@@ -157,7 +157,7 @@ DE_calculate_dge <- function(
     ))
   })
   
-  rez$cooks_d_max <- apply(cooks, 2, function(x) max(x, na.rm=T))
+  rez$cooks_d_max <- apply(cooks, 1, function(x) max(x, na.rm=T))
   rez$cooks_d_pval_min <- apply(cooks_pvals, 2, function(x) min(x, na.rm=T))
   
   return(rez)
