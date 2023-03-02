@@ -938,7 +938,7 @@ if (nrow(test_data) == 0) {
     ## Get only the columns we want
     cols_retain <- c(
       "gene", "gene_symbol", "log2fc", "std_err", "pvalue", "test_statistic",
-      "test_statistic_type", "cooks_d_min", "cooks_d_max"
+      "test_statistic_type", "cooks_d_max", "cooks_d_pval_min"
     )
     rez <- rez[, cols_retain] # NOTE: must be data.frame
 

@@ -106,7 +106,7 @@ DE_calculate_dge <- function(
   
   # Gathering distances
   de_genes$cooks_d_max <- NA
-  de_genes$cooks_d_min <- NA
+  de_genes$cooks_d_pval_min <- NA
   
   return(de_genes)
 }

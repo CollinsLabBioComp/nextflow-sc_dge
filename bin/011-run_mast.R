@@ -165,7 +165,7 @@ DE_calculate_dge <- function(
   
   # Gathering distances
   fcHurdle$cooks_d_max <- NA
-  fcHurdle$cooks_d_min <- NA
+  fcHurdle$cooks_d_pval_min <- NA
 
   return(fcHurdle)
 }
