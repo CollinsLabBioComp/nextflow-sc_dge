@@ -17,7 +17,7 @@ differential_expression:
               variable_target: 'disease_status'
               variable_continuous: ''
               variable_discrete: 'sex,disease_status'
-              variable_discrete_level: 'sex::male,female;;disease_status::healthy,disease'
+              variable_discrete_level: 'sex::male;;disease_status::healthy'
               pre_filter_genes: true
               proportion_covariate_column: 'cell_type'
               include_proportion_covariates: true
@@ -30,7 +30,7 @@ differential_expression:
               variable_target: 'disease_status'
               variable_continuous: 'age'
               variable_discrete: 'sex,disease_status'
-              variable_discrete_level: 'sex::male,female;;disease_status::healthy,disease'
+              variable_discrete_level: 'sex::male;;disease_status::healthy'
               pre_filter_genes: false
               proportion_covariate_column: 'cell_type'
               include_proportion_covariates: false
@@ -43,7 +43,7 @@ differential_expression:
               variable_target: 'disease_status:sex'
               variable_continuous: 'age'
               variable_discrete: 'sex,disease_status'
-              variable_discrete_level: 'sex::male,female;;disease_status::healthy,disease'
+              variable_discrete_level: 'sex::male;;disease_status::healthy'
               pre_filter_genes: true
               proportion_covariate_column: 'cell_type'
               include_proportion_covariates: false

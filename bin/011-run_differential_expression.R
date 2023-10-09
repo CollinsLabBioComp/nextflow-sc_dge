@@ -319,7 +319,32 @@ is_random_effect <- function(val) {
 }
 
 should_remove_term <- function(term, metadata, discrete_levels, verbose=T) {
-  if (term %in% colnames(metadata) & length(unique(metadata[[term]])) <= 1) {
+  term <- trimws(term)
+  if (term %in% colnames(metadata) && length(unique(metadata[[term]])) > 1) {
+    
+    # Check discrete values to make sure reference exists
+    if (
+      term %in% names(discrete_levels) &&
+        !(discrete_levels[[term]] %in% metadata[[term]])
+    ) {
+      
+      if (verbose) {
+        print(sprintf(
+          paste("Metadata do not contain reference value `%s`",
+                "for covariate `%s`. Removing covariate."),
+          reference,
+          term
+        ))
+      }
+      return(T)
+    }
+    
+    # Good covariate
+    return(F)
+  }
+  
+  # Now check for bad actors, but allow recurse
+  if (term %in% colnames(metadata) && length(unique(metadata[[term]])) <= 1) {
     if (verbose) {
       print(sprintf(
         "Covariate `%s` only has one value, removing from DE list.",
@@ -327,6 +352,28 @@ should_remove_term <- function(term, metadata, discrete_levels, verbose=T) {
       ))
     }
     return(T)
+  } else if (is_random_effect(term)) {
+    if (!DE_allow_random_effect()) {
+      print(sprintf(
+        "The specified model does not support random effects. Removing `%s` from DE list.",
+        term
+      ))
+      return(T)
+    }
+    
+    var_terms <- gsub(
+      pattern = '\\)$',
+      replacement = '',
+      x = strsplit(term, split="|", fixed=T)[[1]][2],
+      perl = T
+    )
+    
+    recurse <- should_remove_term(var_terms, metadata, discrete_levels, verbose=T)
+    if (all(recurse)) {
+      print(sprintf("Removing random effect covariate `%s`...", term))
+      return(T)
+    }
+    
   } else if (is_interaction(term)) {
     var_terms <- strsplit(term, split=":", fixed=T)[[1]]
     unique_terms <- metadata %>%
@@ -342,56 +389,9 @@ should_remove_term <- function(term, metadata, discrete_levels, verbose=T) {
       }
       return(T)
     }
-  } else if (is_random_effect(term)) {
-    if (!DE_allow_random_effect()) {
-      print(sprintf(
-        "The specified model does not support random effects. Removing `%s` from DE list.",
-        term
-      ))
-      return(T)
-    }
-
-    var_terms <- strsplit(
-      strsplit(term, split="|", fixed=T)[[1]][2],
-      split=")",
-      fixed=T
-    )[[1]]
-    if (var_terms %in% colnames(metadata) &
-        length(unique(metadata[[var_terms]])) <= 1) {
-      print(sprintf(
-        "Covariate `%s` only has one value, removing from DE list.",
-        term
-      ))
-      return(T)
-    }
   }
-
-  ## Check for correct values for discrete covariates
-  if (term %in% names(discrete_levels)) {
-    data_vals <- unique(metadata[[term]])
-    reference <- discrete_levels[[term]][1]
-    # Check to make sure reference is a value
-    if (!(reference %in% data_vals)) {
-      if (verbose) {
-        print(sprintf(paste("Metadata do not contain reference value `%s`",
-                            "for covariate `%s`. Removing covariate."),
-                      reference, term))
-      }
-      return(T)
-    }
-    # Check to make sure data doesn't contain a value not specified by levels.
-    non_specified_values <- setdiff(data_vals, discrete_levels[[term]])
-    if (length(non_specified_values) > 0) {
-      if (verbose) {
-        print(sprintf(paste("Removing covariate `%s`. The following values",
-                            "appear in the metadata, but not the specified",
-                            "levels: %s"),
-                      term,
-                      paste(non_specified_values, collapse = ", ")))
-      }
-      return(T)
-    }
-  }
+  
+  # Catch all -- just return and hope for good results
   return(F)
 }
 
@@ -666,13 +666,12 @@ discrete_levels <- sapply(
   strsplit(x=discrete_levels_str, split=";;", fixed=T)[[1]],
   function(x) {
     items <- strsplit(x, split="::", fixed=T)[[1]]
-    ret <- strsplit(items[2], split=",",fixed=T)
+    ret <- strsplit(items[2], split=",",fixed=T)[[1]][1] # In case someone using old format
     names(ret) <- items[1]
     return(ret)
   },
   USE.NAMES=F
 )
-
 
 # Check for pseudobulk
 ## If pseudo:
@@ -753,10 +752,14 @@ for (var in formula_variables_passed) {
   ## Deal with specific types
   for (var_term in var_terms) {
     if (var_term %in% names(discrete_levels)) {
+      dat_levels <- unique(c(
+        discrete_levels[[var_term]],
+        setdiff(unique(metadata[[var_term]]), discrete_levels[[var_term]])
+      ))
       metadata[[var_term]] <- factor(
         metadata[[var_term]],
-        levels = discrete_levels[[var_term]],
-        labels = discrete_levels[[var_term]]
+        levels = dat_levels,
+        labels = dat_levels
       )
     } else if (is.character(metadata[[var_term]])) {
       factors <- factor(metadata[[var_term]])
@@ -769,7 +772,7 @@ for (var in formula_variables_passed) {
           var_term
         ))
       }
-    } else if (is.numeric(metadata[[var_term]]) &
+    } else if (is.numeric(metadata[[var_term]]) &&
         !(paste0(var_term, "_unscaled") %in% colnames(metadata))) {
       print(sprintf("Scaling the covariate %s...", var_term))
       # Save the unscaled variable as _unscaled
