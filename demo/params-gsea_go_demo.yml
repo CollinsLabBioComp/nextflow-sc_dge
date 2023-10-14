@@ -25,6 +25,7 @@ differential_expression:
               ruvseq_n_empirical_genes: 0.5
               ruvseq_min_pvalue: 0.25
               ruvseq_k: 5
+              prune_collinear_terms: false
     de_merge_config:
         ihw_correction:
             run_process: true

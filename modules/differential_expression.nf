@@ -124,6 +124,9 @@ process run_differential_expression {
             formula_clean = "${formula_clean}_min_pvalue=${model.ruvseq_min_pvalue}"
             formula_clean = "${formula_clean}_kfactors=${model.ruvseq_k}"
         }
+        if (model.prune_collinear_terms) {
+            cmd__options = "${cmd__options} --prune_collinear_terms"
+        }
         outdir = "${outdir_prev}/differential_expression/${variable_target_clean}"
         outdir = "${outdir}/cell_label=${cell_label}"
         outdir = "${outdir}/method=${model.method}___formula=${formula_clean}"
