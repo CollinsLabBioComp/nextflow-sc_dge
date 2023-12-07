@@ -105,12 +105,24 @@ DE_calculate_dge <- function(
   # Structure results into interpretable format
   # Here we select for:
   # 1. P-values from the hurdle model... there are three different p-values
-  #   from the different models (a) discrete, (b) continuous, and (c) hurdle.
-  #   We want the hurdle p-values (which combine the conditionally independent
-  #   discrete and continuous models).
-  # 2. logFC values and related information
+  #    from the different models (a) discrete, (b) continuous, and (c) hurdle.
+  #    We want the hurdle p-values (which combine the conditionally independent
+  #    discrete and continuous models). This corresponds to component == H.
+  #    NOTE: there are no test statistics or coefficients for component H,
+  #    just p-values (components D and C have test stats and coef).
+  # 2. logFC values and related information for coef.
+  #    NOTE: log scale is in the same scale as the input. In this case
+  #    NOTE: from the MAST manual...
+  #      The log fold change can be small, but the Hurdle p-value small and
+  #      significant when the sign of the discrete and continuous model
+  #      components are discordant so that the marginal log fold change
+  #      cancels out. The large sample sizes present in many single cell
+  #      experiments also means that there is substantial power to detect
+  #      even small changes.
   # 3. Z-scores from Stouffer method, combining the conditionally independent
-  #    discrete and continuous models
+  #    discrete and continuous models. This correction to component S.
+  #    There is nothing else in component S apart from test statistics (stored
+  #    in z column).
   fcHurdle <- merge(
     results_dt[
       contrast == coef_value & component == "H",
@@ -160,6 +172,16 @@ DE_calculate_dge <- function(
   )
   fcHurdle[na_ix, "pvalue"] <- NA
   fcHurdle[na_ix, "log2fc"] <- NA
+  
+  # NOTE: the log scale of MAST is whatever the user passed in
+  # https://github.com/theislab/single-cell-tutorial/issues/20
+  # https://github.com/RGLab/MAST/issues/112
+  # In this case, we prep by default in 011-run_differential_expression.R
+  # log1p which is uses exp(1) base. Therefore to get log2FC we need
+  # to divide by log(2, base = exp(1))
+  for (i in c("ci.hi", "ci.lo", "log2fc")) {
+    fcHurdle[[i]] <- fcHurdle[[i]] / log(2, base = exp(1))
+  }
 
   fcHurdle <- fcHurdle %>%
     dplyr::arrange(pvalue) %>%
