@@ -151,7 +151,15 @@ DE_calculate_dge <- function(
   # If model doesn't converge, MAST puts NA for log2FC.
   # See: https://github.com/RGLab/MAST/issues/148
   # Add NA for pvalue so it isn't included in pvalue correction, but leave
-  fcHurdle[which(is.na(fcHurdle$log2fc)), "pvalue"] <- NA
+  # Edit: 12/7/23 - Same goes for std_errs and test_stat
+  na_ix <- which(
+    is.na(fcHurdle$log2fc) |
+      is.na(fcHurdle$test_statistic) |
+      is.na(fcHurdle$ci.hi) |
+      is.na(fcHurdle$ci.lo)
+  )
+  fcHurdle[na_ix, "pvalue"] <- NA
+  fcHurdle[na_ix, "log2fc"] <- NA
 
   fcHurdle <- fcHurdle %>%
     dplyr::arrange(pvalue) %>%
