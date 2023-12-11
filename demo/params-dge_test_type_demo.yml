@@ -10,14 +10,18 @@ differential_expression:
         description: 'List of differential formula and params.
             All covariates in formula should be listed in either
                 variable_continuous or variable_discrete.'
-        mean_cp10k_filter: 1
+        filter_options:
+            filter: 1
+            modality: 'cp10k'
+            metric: 'mean'
+            by_comparison: false
         value:
             - method: 'mast::singlecell::bayesglm'
               formula: '~ sex + disease_status'
               variable_target: 'disease_status'
               variable_continuous: ''
               variable_discrete: 'sex,disease_status'
-              variable_discrete_level: 'sex::male,female;;disease_status::healthy,disease'
+              variable_discrete_level: 'sex::male;;disease_status::healthy'
               pre_filter_genes: true
               proportion_covariate_column: 'cell_type'
               include_proportion_covariates: true
@@ -25,12 +29,13 @@ differential_expression:
               ruvseq_n_empirical_genes: 0.5
               ruvseq_min_pvalue: 0.25
               ruvseq_k: 2
+              prune_collinear_terms: false
             - method: 'edger::singlecell::glmQLFit'
               formula: '~ disease_status + sex + age'
               variable_target: 'disease_status'
               variable_continuous: 'age'
               variable_discrete: 'sex,disease_status'
-              variable_discrete_level: 'sex::male,female;;disease_status::healthy,disease'
+              variable_discrete_level: 'sex::male;;disease_status::healthy'
               pre_filter_genes: false
               proportion_covariate_column: 'cell_type'
               include_proportion_covariates: false
@@ -38,12 +43,13 @@ differential_expression:
               ruvseq_n_empirical_genes: 0.5
               ruvseq_min_pvalue: 0.25
               ruvseq_k: 2
+              prune_collinear_terms: false
             - method: 'deseq::pseudobulk::glmGamPoi'
               formula: '~ sex + disease_status + age + disease_status:sex'
               variable_target: 'disease_status:sex'
               variable_continuous: 'age'
               variable_discrete: 'sex,disease_status'
-              variable_discrete_level: 'sex::male,female;;disease_status::healthy,disease'
+              variable_discrete_level: 'sex::male;;disease_status::healthy'
               pre_filter_genes: true
               proportion_covariate_column: 'cell_type'
               include_proportion_covariates: false
@@ -51,6 +57,7 @@ differential_expression:
               ruvseq_n_empirical_genes: 0.5
               ruvseq_min_pvalue: 0.25
               ruvseq_k: 2
+              prune_collinear_terms: true
     de_merge_config:
         ihw_correction:
             run_process: false

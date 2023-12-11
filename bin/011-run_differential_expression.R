@@ -6,43 +6,43 @@ set.seed(0)
 ##################### Read Command Line Parameters #############################
 suppressPackageStartupMessages(library(optparse))
 optionList <- list(
-  optparse::make_option(c("-a", "--input_dir"),
+  optparse::make_option("--input_dir",
                         type = "character",
                         default = "matrix_dir",
                         help = "Directory containing input files for MAST"
   ),
 
-  optparse::make_option(c("-b", "--cell_label_column"),
+  optparse::make_option("--cell_label_column",
                         type = "character",
                         default = "cluster",
                         help = "Column to use for cell label."
   ),
 
-  optparse::make_option(c("-c", "--cell_label"),
+  optparse::make_option("--cell_label",
                         type = "character",
                         default = "",
                         help = "Cell label."
   ),
 
-  optparse::make_option(c("-d", "--variable_target"),
+  optparse::make_option("--variable_target",
                         type = "character",
                         default = "condition",
                         help = "Column to test."
   ),
 
-  optparse::make_option(c("-e", "--discrete_variables"),
+  optparse::make_option("--discrete_variables",
                         type = "character",
                         default = "",
                         help = "Discrete covariates to include in the model."
   ),
 
-  optparse::make_option(c("-f", "--continuous_variables"),
+  optparse::make_option("--continuous_variables",
                         type = "character",
                         default = "",
                         help = "Continuous covariates to include in the model."
   ),
 
-  optparse::make_option(c("-g", "--discrete_levels"),
+  optparse::make_option("--discrete_levels",
                         type = "character",
                         default = "",
                         help = "Levels of discrete covariates to include in
@@ -52,7 +52,7 @@ optionList <- list(
                             sex::M,F;;disease::healthy,unwell,sick"
   ),
 
-  optparse::make_option(c("-i", "--method"),
+  optparse::make_option("--method",
                         type = "character",
                         default = "",
                         help = "Method to use. Needs to correspond with
@@ -65,45 +65,66 @@ optionList <- list(
                         deseq::pseudobulk::glmGamPoi"
   ),
 
-  optparse::make_option(c("-j", "--method_script"),
+  optparse::make_option("--method_script",
                         type = "character",
                         default = "",
                         help = "Script to use to run DE."
   ),
 
-  optparse::make_option(c("-k", "--experiment_key"),
+  optparse::make_option("--experiment_key",
                         type = "character",
                         default = "sanger_sample_id",
                         help = "Key to use to determine sample source of cells."
   ),
 
-  optparse::make_option(c("-l", "--mean_cp10k_filter"),
+  optparse::make_option("--filter",
                         type = "double",
                         default = 1,
-                        help = "Filter to remove genes with fewer cp10k
-                        averages."
+                        help = "Filter amount"
+  ),
+  
+  optparse::make_option("--filter_modality",
+                        type = "character",
+                        default = "cp10k",
+                        help = "Expression modality to use.
+                        Options: counts, cp10k, logcp10k
+                        "
+  ),
+  
+  optparse::make_option("--filter_metric",
+                        type = "character",
+                        default = "mean",
+                        help = "Expression metric to use.
+                        Options: mean, median
+                        "
+  ),
+  
+  optparse::make_option("--filter_by_comparison",
+                        action = "store_true",
+                        default = FALSE,
+                        help = "Filter by each comparison instead of celltype"
   ),
 
-  optparse::make_option(c("-m", "--pre_filter_genes"),
+  optparse::make_option("--pre_filter_genes",
                         action = "store_true",
                         default = FALSE,
                         help = "Filter genes before differential expression
                         analysis."
   ),
 
-  optparse::make_option(c("-n", "--out_file"),
+  optparse::make_option("--out_file",
                         type = "character",
                         default = "",
                         help = "Base output name."
   ),
 
-  optparse::make_option(c("-o", "--cores_available"),
+  optparse::make_option("--cores_available",
                         type = "integer",
                         default = 1,
                         help = "Number of cores to use."
   ),
 
-  optparse::make_option(c("-p", "--formula"),
+  optparse::make_option("--formula",
                         type = "character",
                         default = "",
                         help = "Formula to model (if none, will automatically
@@ -113,7 +134,7 @@ optionList <- list(
                              effects one must use glmer method."
   ),
 
-  optparse::make_option(c("-q", "--include_proportion_covariates"),
+  optparse::make_option("--include_proportion_covariates",
                         action = "store_true",
                         default = FALSE,
                         help = "If TRUE, include proportion covarates. These
@@ -122,7 +143,7 @@ optionList <- list(
                         `_proportion__autogen`."
   ),
 
-  optparse::make_option(c("-r", "--include_cluster_identity"),
+  optparse::make_option("--include_cluster_identity",
                         action = "store_true",
                         default = FALSE,
                         help = "If FALSE, do not include own cell identity as
@@ -130,14 +151,14 @@ optionList <- list(
                         a covariate."
   ),
   
-  optparse::make_option(c("-s", "--run_ruvseq"),
+  optparse::make_option("--run_ruvseq",
                         action = "store_true",
                         default = FALSE,
                         help = "If TRUE, perform RUVseq based on empirically
                         defined control genes. If FALSE, do nothing."
   ),
   
-  optparse::make_option(c("-t", "--ruvseq_n_empirical_genes"),
+  optparse::make_option("--ruvseq_n_empirical_genes",
                         type = "double",
                         default = 0.5,
                         help = "Number of empirical genes to use for RUVseq. If
@@ -145,7 +166,7 @@ optionList <- list(
                         `value`>1, we use `value`."
   ),
   
-  optparse::make_option(c("-u", "--ruvseq_min_pvalue"),
+  optparse::make_option("--ruvseq_min_pvalue",
                         type = "double",
                         default = 0.25,
                         help = "Minimum pvalue threshold for RUVseq empirical
@@ -153,13 +174,20 @@ optionList <- list(
                         control set."
   ),
   
-  optparse::make_option(c("-w", "--ruvseq_k_factors"),
+  optparse::make_option("--ruvseq_k_factors",
                         type = "integer",
                         default = 2,
                         help = "Number of factors to calculate with RUVseq."
   ),
+  
+  optparse::make_option("--prune_collinear_terms",
+                        action = "store_true",
+                        default = FALSE,
+                        help = "If TRUE, prunes collinear covariates. If FALSE,
+                        do nothing."
+  ),
 
-  optparse::make_option(c("-v", "--verbose"),
+  optparse::make_option("--verbose",
                         action = "store_true",
                         default = TRUE,
                         help = ""
@@ -193,7 +221,11 @@ arguments <- optparse::parse_args(parser, positional_arguments = TRUE)
 ######################## Required Packages #####################################
 suppressPackageStartupMessages(library(Matrix))
 suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(RUVSeq))
+
+# Optional arguments packages
+if (arguments$options$run_ruvseq) {
+  suppressPackageStartupMessages(library(RUVSeq))
+}
 # Source the method script
 suppressPackageStartupMessages(source(arguments$options$method_script))
 ################################################################################
@@ -297,9 +329,47 @@ get_pseudobulk_metadata <- function(metadata, sample_key) {
   return(new_metadata)
 }
 
-pct_exprs_n <- function(matrix, threshold = 1) {
-  total <- ncol(matrix)
-  pcts <- apply(matrix, 1, function(x) {
+calculate_filter_metric <- function(
+    modality,
+    metric,
+    count_mtx,
+    cp10k_mtx,
+    logcp10k_mtx
+) {
+  if (modality == 'counts') {
+    filt_mtx <- count_mtx
+  } else if (modality == 'logcp10k') {
+    filt_mtx <- logcp10k_mtx
+  } else { # Default to cp10k
+    filt_mtx <- cp10k_mtx
+  }
+  
+  if (metric == 'median') {
+    filt_metrics <- apply(filt_mtx, 1, median, na.rm=T)
+  } else {
+    filt_metrics <- Matrix::rowMeans(filt_mtx, na.rm = T)
+  }
+  names(filt_metrics) <- rownames(filt_mtx)
+  return(filt_metrics)
+}
+
+pct_exprs_n <- function(
+    modality,
+    threshold,
+    count_mtx,
+    cp10k_mtx,
+    logcp10k_mtx
+) {
+  if (modality == 'counts') {
+    mtx <- count_mtx
+  } else if (modality == 'logcp10k') {
+    mtx <- logcp10k_mtx
+  } else { # Default to cp10k
+    mtx <- cp10k_mtx
+  }
+  
+  total <- ncol(mtx)
+  pcts <- apply(mtx, 1, function(x) {
     return((sum(x >= threshold, na.rm = T) / total) * 100)
   })
   return(pcts)
@@ -318,8 +388,49 @@ is_random_effect <- function(val) {
   return(grepl("|", val, fixed = TRUE))
 }
 
+match_target <- function(form, target) {
+  if (is_interaction(target)) {
+    tar_terms <- sort(strsplit(x=target, split=':', fixed=T)[[1]])
+    
+    # Iterate and test
+    for (term in attr(terms(form), "term.labels")) {
+      if (is_interaction(term)) {
+        all_terms <- sort(strsplit(x=term, split=':', fixed=T)[[1]])
+        if (all(tar_terms == all_terms)) { return(term) }
+      }
+    }
+  }
+  return(target)
+}
+
+
 should_remove_term <- function(term, metadata, discrete_levels, verbose=T) {
-  if (term %in% colnames(metadata) & length(unique(metadata[[term]])) <= 1) {
+  term <- trimws(term)
+  if (term %in% colnames(metadata) && length(unique(metadata[[term]])) > 1) {
+    
+    # Check discrete values to make sure reference exists
+    if (
+      term %in% names(discrete_levels) &&
+        !(discrete_levels[[term]] %in% metadata[[term]])
+    ) {
+      
+      if (verbose) {
+        print(sprintf(
+          paste("Metadata do not contain reference value `%s`",
+                "for covariate `%s`. Removing covariate."),
+          reference,
+          term
+        ))
+      }
+      return(T)
+    }
+    
+    # Good covariate
+    return(F)
+  }
+  
+  # Now check for bad actors, but allow recurse
+  if (term %in% colnames(metadata) && length(unique(metadata[[term]])) <= 1) {
     if (verbose) {
       print(sprintf(
         "Covariate `%s` only has one value, removing from DE list.",
@@ -327,6 +438,28 @@ should_remove_term <- function(term, metadata, discrete_levels, verbose=T) {
       ))
     }
     return(T)
+  } else if (is_random_effect(term)) {
+    if (!DE_allow_random_effect()) {
+      print(sprintf(
+        "The specified model does not support random effects. Removing `%s` from DE list.",
+        term
+      ))
+      return(T)
+    }
+    
+    var_terms <- gsub(
+      pattern = '\\)$',
+      replacement = '',
+      x = strsplit(term, split="|", fixed=T)[[1]][2],
+      perl = T
+    )
+    
+    recurse <- should_remove_term(var_terms, metadata, discrete_levels, verbose=T)
+    if (all(recurse)) {
+      print(sprintf("Removing random effect covariate `%s`...", term))
+      return(T)
+    }
+    
   } else if (is_interaction(term)) {
     var_terms <- strsplit(term, split=":", fixed=T)[[1]]
     unique_terms <- metadata %>%
@@ -342,56 +475,9 @@ should_remove_term <- function(term, metadata, discrete_levels, verbose=T) {
       }
       return(T)
     }
-  } else if (is_random_effect(term)) {
-    if (!DE_allow_random_effect()) {
-      print(sprintf(
-        "The specified model does not support random effects. Removing `%s` from DE list.",
-        term
-      ))
-      return(T)
-    }
-
-    var_terms <- strsplit(
-      strsplit(term, split="|", fixed=T)[[1]][2],
-      split=")",
-      fixed=T
-    )[[1]]
-    if (var_terms %in% colnames(metadata) &
-        length(unique(metadata[[var_terms]])) <= 1) {
-      print(sprintf(
-        "Covariate `%s` only has one value, removing from DE list.",
-        term
-      ))
-      return(T)
-    }
   }
-
-  ## Check for correct values for discrete covariates
-  if (term %in% names(discrete_levels)) {
-    data_vals <- unique(metadata[[term]])
-    reference <- discrete_levels[[term]][1]
-    # Check to make sure reference is a value
-    if (!(reference %in% data_vals)) {
-      if (verbose) {
-        print(sprintf(paste("Metadata do not contain reference value `%s`",
-                            "for covariate `%s`. Removing covariate."),
-                      reference, term))
-      }
-      return(T)
-    }
-    # Check to make sure data doesn't contain a value not specified by levels.
-    non_specified_values <- setdiff(data_vals, discrete_levels[[term]])
-    if (length(non_specified_values) > 0) {
-      if (verbose) {
-        print(sprintf(paste("Removing covariate `%s`. The following values",
-                            "appear in the metadata, but not the specified",
-                            "levels: %s"),
-                      term,
-                      paste(non_specified_values, collapse = ", ")))
-      }
-      return(T)
-    }
-  }
+  
+  # Catch all -- just return and hope for good results
   return(F)
 }
 
@@ -442,31 +528,31 @@ mean_impute_nan_numeric <- function(df, cols, verbose = T) {
 
 get_testing_data <- function(test_var, metadata, formula) {
   if (is_interaction(test_var)) {
-    terms <- strsplit(test_var, split=":", fixed=T)[[1]]
-    test_term <- terms[1]
-    for (term in terms[-1]) {
-      if (is.character(metadata[[term]])) {
-        stop(sprintf(paste("%s is a discrete covariate. Interactions",
-                           "with discrete covariates are not supported."),
-                     term))
-      }
-    }
-    # Get information for testing var
-    df <- get_testing_data(test_term, metadata)
-
-    # Add back interactions
-    form_terms <- attr(terms(formula), "term.labels")
-    form_terms <- unlist(lapply(attr(terms(formula), "term.labels"),
-                                function(x) {
-                                  return(strsplit(x, split=":", fixed=T)[[1]])
-                                }))
-    terms <- terms[order(match(terms, form_terms))]
-    format_str <- paste(replace(terms, which(terms == test_term), "%s"),
-                        collapse = ":")
-    df$alt_var <- sprintf(format_str, df$alt_var)
-    if (all(!is.na(df$ref_var))) {
-      df$ref_var <- sprintf(format_str, df$ref_var)
-    }
+    # Get intersection of full and term-based model
+    term__mm <- as.data.frame(model.matrix(
+      formula(sprintf('~ %s', test_var)),
+      metadata
+    ))
+    fixed_effects <- attr(terms(formula), "term.labels")[
+      !is_random_effect(attr(terms(formula), "term.labels"))
+    ]
+    full__mm <- as.data.frame(model.matrix(
+      reconstruct_formula(fixed_effects),
+      metadata
+    ))
+    test_terms <- intersect(colnames(term__mm), colnames(full__mm))
+    test_terms <- test_terms[test_terms != '(Intercept)']
+    df <- data.frame(
+      "alt_var" = test_terms,
+      "ref_var" = NA,
+      "barcodes" = sapply(
+        test_terms,
+        function(x) paste(
+          rownames(full__mm[full__mm[[x]] == 1, ]),
+          collapse = "$$"
+        )
+      )
+    )
     return(df)
   } else {
     if (is.numeric(metadata[[test_var]])) {
@@ -492,8 +578,11 @@ get_testing_data <- function(test_var, metadata, formula) {
   }
 }
 
-reconstruct_formula <- function(original_terms, terms_to_remove) {
-  form_terms <- setdiff(original_terms, terms_to_remove)
+reconstruct_formula <- function(original_terms, terms_to_remove=NULL) {
+  form_terms <- original_terms
+  if (!is.null(terms_to_remove)) {
+    form_terms <- setdiff(form_terms, terms_to_remove)
+  }
 
   # Need to add parentheses back to random effects
   form_terms <- sapply(form_terms, function(term) {
@@ -536,6 +625,71 @@ run_ruvseq <- function(
   return(as.data.frame(ruv_covs$W))
 }
 
+clean_formula_terms <- function(x) {
+  # case 1: interactions
+  x <- gsub(x = x, pattern = ':', replacement = '__', fixed = T)
+  return(x)
+}
+
+prune_collinear_terms <- function(metadata, formula, test_vars) {
+  form_terms <- attr(terms(formula), "term.labels")
+  
+  # Step 1: isolate to fixed effects and create design matrix
+  fixed_effects <- form_terms[!is_random_effect(form_terms)]
+  des_mtx <- as.matrix(model.matrix(
+    reconstruct_formula(fixed_effects),
+    metadata
+  ))
+  
+  # Step 2: prune co-linear terms, but make sure to retain 
+  updated_mtx <- des_mtx
+  pivot_order <- qr(updated_mtx)$pivot
+  rank_mtx <- Matrix::rankMatrix(updated_mtx)
+  while (rank_mtx < ncol(updated_mtx)) {
+    non_term_pivot <- setdiff(
+      pivot_order,
+      which(colnames(updated_mtx) %in% test_vars)
+    )
+    term_diff <- ncol(updated_mtx) - rank_mtx
+    terms_drop <- colnames(updated_mtx)[
+      non_term_pivot[(length(non_term_pivot)-term_diff):length(non_term_pivot)]
+    ]
+    
+    print(paste(
+      'Dropping the following terms to avoid collinearity: ',
+      paste0(terms_drop, collapse = ', ')
+    ))
+    
+    # recalculate data
+    updated_mtx <- updated_mtx[
+      ,
+      colnames(updated_mtx)[!colnames(updated_mtx) %in% terms_drop]
+    ]
+    pivot_order <- qr(updated_mtx)$pivot
+    rank_mtx <- Matrix::rankMatrix(updated_mtx)
+  }
+  
+  model_terms <- colnames(updated_mtx)[colnames(updated_mtx) != '(Intercept)']
+  updated_df <- as.data.frame(updated_mtx[ , model_terms])
+  
+  # Need to purge dataframe terms
+  model_terms <- clean_formula_terms(model_terms)
+  colnames(updated_df) <- model_terms
+  
+  # Add back original dataframe and random effects
+  final_meta <- cbind(
+    updated_df,
+    metadata[rownames(updated_df), setdiff(colnames(metadata), model_terms)]
+  )
+  model_terms <- c(model_terms, form_terms[is_random_effect(form_terms)])
+  
+  return(list(
+    'formula' = reconstruct_formula(model_terms),
+    'metadata' = final_meta,
+    'test_vars' = clean_formula_terms(test_vars)
+  ))
+}
+
 get_empty_df <- function() {
   return(data.frame(
     gene=character(),
@@ -553,7 +707,10 @@ get_empty_df <- function() {
 ######################## Read Data & Manipulate ################################
 verbose <- arguments$options$verbose
 output_file_base <- arguments$options$out_file
-mean_filter <- arguments$options$mean_cp10k_filter
+filter <- arguments$options$filter
+filter_modality <- arguments$options$filter_modality
+filter_metric <- arguments$options$filter_metric
+filt_descriptor <- paste0(filter_metric, '_', filter_modality)
 formula_str <- arguments$options$formula
 
 # Read all data in
@@ -566,22 +723,6 @@ if (verbose) {
 counts_matrix <- read_matrix(sprintf("%s/counts", mtx_file_dir))
 logcp10_matrix <- read_matrix(sprintf("%s/log1p_cp10k", mtx_file_dir))
 cp10_matrix <- read_matrix(sprintf("%s/cp10k", mtx_file_dir))
-
-if (arguments$options$pre_filter_genes) {
-  print(sprintf(paste("Filtering genes with fewer than %s counts per 10k",
-                      "BEFORE finding differentially expressed genes."),
-                mean_filter))
-  n_genes_pre_filter <- nrow(cp10_matrix)
-
-  # Filter and update all matrices
-  cp10_matrix <- cp10_matrix[Matrix::rowMeans(cp10_matrix) > mean_filter, ]
-  counts_matrix <- counts_matrix[rownames(cp10_matrix), ]
-  logcp10_matrix <- logcp10_matrix[rownames(cp10_matrix), ]
-
-  print(
-    sprintf("Retaining %s / %s genes.", nrow(cp10_matrix), n_genes_pre_filter)
-  )
-}
 
 # May also need feature metadata
 feature_metadata <- read.csv(
@@ -666,13 +807,12 @@ discrete_levels <- sapply(
   strsplit(x=discrete_levels_str, split=";;", fixed=T)[[1]],
   function(x) {
     items <- strsplit(x, split="::", fixed=T)[[1]]
-    ret <- strsplit(items[2], split=",",fixed=T)
+    ret <- strsplit(items[2], split=",",fixed=T)[[1]][1] # In case someone using old format
     names(ret) <- items[1]
     return(ret)
   },
   USE.NAMES=F
 )
-
 
 # Check for pseudobulk
 ## If pseudo:
@@ -711,7 +851,6 @@ if (pseudobulk == "pseudobulk") {
   metadata <- mean_impute_nan_numeric(metadata, continuous_covs)
 }
 
-
 # Get formula
 ## For each term:
 ## 1) Check to make sure it exists in metadata
@@ -720,7 +859,8 @@ if (pseudobulk == "pseudobulk") {
 ## 3) Check for a single value -- if only one value exists, remove from vars
 ##      MAST throws an error if not
 formula <- formula(formula_str)
-testing_var <- arguments$options$variable_target
+testing_var <- match_target(formula, arguments$options$variable_target)
+
 formula_variables_passed <- attr(terms(formula), "term.labels")
 vars_removed <- c()
 # First evaluate any terms
@@ -753,10 +893,14 @@ for (var in formula_variables_passed) {
   ## Deal with specific types
   for (var_term in var_terms) {
     if (var_term %in% names(discrete_levels)) {
+      dat_levels <- unique(c(
+        discrete_levels[[var_term]],
+        setdiff(unique(metadata[[var_term]]), discrete_levels[[var_term]])
+      ))
       metadata[[var_term]] <- factor(
         metadata[[var_term]],
-        levels = discrete_levels[[var_term]],
-        labels = discrete_levels[[var_term]]
+        levels = dat_levels,
+        labels = dat_levels
       )
     } else if (is.character(metadata[[var_term]])) {
       factors <- factor(metadata[[var_term]])
@@ -769,7 +913,7 @@ for (var in formula_variables_passed) {
           var_term
         ))
       }
-    } else if (is.numeric(metadata[[var_term]]) &
+    } else if (is.numeric(metadata[[var_term]]) &&
         !(paste0(var_term, "_unscaled") %in% colnames(metadata))) {
       print(sprintf("Scaling the covariate %s...", var_term))
       # Save the unscaled variable as _unscaled
@@ -788,12 +932,27 @@ if (testing_var %in% vars_removed) {
 }
 formula <- reconstruct_formula(formula_variables_passed, vars_removed)
 
-if (verbose) {
-  print(sprintf("The final formula: `%s`", deparse(formula)))
-}
-
 ## Now get every alt hypothesis and corresponding barcodes
 test_data <- get_testing_data(testing_var, metadata, formula)
+
+# final step for dealing with formula: prune colinear covariates to prioritize
+# testing terms.
+# The way we will do this: re-construct fixed effects in matrix model,
+# but include random effects.
+if (arguments$options$prune_collinear_terms) {
+  if (verbose) {
+    print("Pruning colinear covariants...")
+  }
+  model_form <- prune_collinear_terms(
+    metadata,
+    formula,
+    test_data[['alt_var']]
+  )
+  metadata <- model_form[['metadata']]
+  formula <- model_form[['formula']]
+  test_data[['alt_var']] <- model_form[['test_vars']] # Clean terms in testing data too
+}
+if (verbose) { print(sprintf("The final formula: `%s`", deparse(formula))) }
 
 if (nrow(test_data) == 0) {
   ## if test data is empty--issue with the rank. Returning a null dataframe so
@@ -802,6 +961,45 @@ if (nrow(test_data) == 0) {
 } else {
   ## Run LRT and merge
   ldfs <- apply(test_data, 1, function(i) {
+    counts_mtx__cond <- counts_matrix
+    cp10_mtx__cond <- cp10_matrix
+    logcp10_mtx__cond <-  logcp10_matrix
+    feat_meta__cond <- feature_metadata
+    
+    # Deal with filtering first
+    barcodes <- strsplit(i["barcodes"], split="$$", fixed=T)[[1]]
+    gene_filter__celltype <- calculate_filter_metric(
+      filter_modality,
+      filter_metric,
+      counts_mtx__cond,
+      cp10_mtx__cond,
+      logcp10_mtx__cond
+    )
+    gene_filter__comparison <- calculate_filter_metric(
+      filter_modality,
+      filter_metric,
+      counts_mtx__cond[ , barcodes],
+      cp10_mtx__cond[ , barcodes],
+      logcp10_mtx__cond[ , barcodes]
+    )
+    
+    if (arguments$options$pre_filter_genes) {
+      filt_arr <- gene_filter__celltype
+      if (arguments$options$filter_by_comparison) {
+        filt_arr <- gene_filter__comparison 
+      }
+      
+      print('Applying gene filter BEFORE DGE...')
+      gene_retain <- names(filt_arr[filt_arr >= filter])
+      print(sprintf(
+        "Retaining %s / %s genes.", length(gene_retain), nrow(cp10_mtx__cond)
+      ))
+
+      counts_mtx__cond <- counts_mtx__cond[gene_retain, ]
+      cp10_mtx__cond <- cp10_mtx__cond[gene_retain, ]
+      logcp10_mtx__cond <- logcp10_mtx__cond[gene_retain, ]
+      feat_meta__cond <- feat_meta__cond[gene_retain, , drop=F]
+    }
 
     de_method <- paste(
       strsplit(x=arguments$options$method, split="::", fixed=T)[[1]][-1],
@@ -827,11 +1025,11 @@ if (nrow(test_data) == 0) {
     ## The inputs need to be the same for each script.
     input_type <- DE_get_input_type()
     if (input_type == "counts") {
-      input <- counts_matrix
+      input <- counts_mtx__cond
     } else if (input_type == "logcp10") {
-      input <- logcp10_matrix
+      input <- logcp10_mtx__cond
     } else if (input_type == "cp10") {
-      input <- cp10_matrix
+      input <- cp10_mtx__cond
     }
 
     ## This method should return a DF with the following columns:
@@ -840,7 +1038,7 @@ if (nrow(test_data) == 0) {
     rez <- try(
       DE_calculate_dge(
         input_matrix = input,
-        feature_metadata = feature_metadata,
+        feature_metadata = feat_meta__cond,
         sample_metadata = metadata,
         testing_var = testing_var,
         coef_value = i["alt_var"],
@@ -875,7 +1073,7 @@ if (nrow(test_data) == 0) {
         ruvseq_n_emp,
         ruvseq_min_pvalue,
         ruvseq_k,
-        counts_matrix
+        counts_mtx__cond
       )
       
       ruvseq_factors__formatted <- ruvseq_factors
@@ -906,7 +1104,7 @@ if (nrow(test_data) == 0) {
       rez <- try(
         DE_calculate_dge(
           input_matrix = input,
-          feature_metadata = feature_metadata,
+          feature_metadata = feat_meta__cond,
           sample_metadata = metadata,
           testing_var = testing_var,
           coef_value = i["alt_var"],
@@ -962,12 +1160,16 @@ if (nrow(test_data) == 0) {
     rez$ruvseq_k_factors <- ruvseq_k
 
     ## Get count averages
-    barcodes <- strsplit(i["barcodes"], split="$$", fixed=T)[[1]]
-    rez$mean_counts <- Matrix::rowMeans(counts_matrix[rez$gene, barcodes])
-    rez$mean_cp10k <- Matrix::rowMeans(cp10_matrix[rez$gene, barcodes])
-    rez[[paste0("pct_", mean_filter, "cp10k")]] <- pct_exprs_n(
-        cp10_matrix[rez$gene, barcodes], mean_filter
+    rez[[paste0(filt_descriptor, '__celltype')]] <- gene_filter__celltype[rez$gene]
+    rez[[paste0(filt_descriptor, '__comparison')]] <- gene_filter__comparison[rez$gene]
+    rez[[paste0("pct_", arguments$options$filter_modality, '_', filter)]] <- pct_exprs_n(
+      filter_modality,
+      filter,
+      counts_mtx__cond,
+      cp10_mtx__cond,
+      logcp10_mtx__cond
     )
+    
     ## Add number of cells
     rez$n_cells <- ncol(input)
 
@@ -1006,15 +1208,26 @@ if (nrow(de_results) > 0) {
 
   # Filter
   if (verbose) {
-    cat(sprintf("Filtering out genes with mean cp10k expression < %s...\n",
-                mean_filter))
+    cat(sprintf(
+      "Filtering out genes with %s %s expression < %s...\n",
+      filter_metric,
+      filter_modality,
+      filter
+    ))
   }
   n_genes_before <- nrow(de_results)
-  de_results <- de_results[which(de_results$mean_cp10k > mean_filter), ]
+  
+  filt_col <- paste0(filt_descriptor, '__celltype')
+  if (arguments$options$filter_by_comparison) {
+    filt_col <- paste0(filt_descriptor, '__comparison') 
+  }
+  de_results <- de_results[which(de_results[[filt_col]] >= filter), ]
 
   if (verbose) {
-    cat(sprintf("Done. Filtered %s genes.\n",
-                n_genes_before - nrow(de_results)))
+    cat(sprintf(
+      "Done. Filtered %s genes.\n",
+      n_genes_before - nrow(de_results)
+    ))
   }
 
   # p.adjust ignores NA pvalues unless `n` argument is specified
