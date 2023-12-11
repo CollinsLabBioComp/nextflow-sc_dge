@@ -147,12 +147,36 @@ def main():
     )
 
     parser.add_argument(
-        '-expr_filt', '--mean_expression_filter',
+        '-expr_met', '--expression_metric',
         action='store',
-        dest='mean_expression_filter',
+        dest='expr_met',
+        default='mean',
+        help='Metric to filter expression on.'
+    )
+
+    parser.add_argument(
+        '-expr_mod', '--expression_modality',
+        action='store',
+        dest='expr_mod',
+        default='cp10k',
+        help='Modality to filter expression on.'
+    )
+
+    parser.add_argument(
+        '-expr_by_comp', '--expression_filter_by_comparison',
+        action='store_true',
+        dest='expr_by_comp',
+        default=False,
+        help='Celltype or comparison filter'
+    )
+
+    parser.add_argument(
+        '-expr_filt', '--expression_filter',
+        action='store',
+        dest='expr_filt',
         default=0.1,
         type=float,
-        help='Filter genes where mean expression is <= this value. \
+        help='Filter genes expression is <= this value. \
             For lowly expressed genes, outliers tend to pull the regression \
             fit and result in false positives. \
             If 0.0 then no filtering is performed.'
@@ -173,17 +197,22 @@ def main():
     file = options.df
     cols_compare = options.columns_to_compare.split(',')
     output_file = options.output_file
-    mean_expression_filter = options.mean_expression_filter
+
+    if options.expr_by_comp:
+        filter_col = '{}_{}__comparison'.format(options.expr_met, options.expr_mod)
+    else:
+        filter_col = '{}_{}__celltype'.format(options.expr_met, options.expr_mod)
+    expression_filter = options.expr_filt
 
     df = pd.read_csv(file, sep='\t', low_memory=False)
 
     # Filter out tests based on mean expression
     output_file = '{}-expression_filter__{}'.format(
         output_file,
-        str(mean_expression_filter).replace('.', 'pt')
+        str(expression_filter).replace('.', 'pt')
     )
-    if mean_expression_filter != 0.0:
-        df = df.loc[(df['mean_counts'] > mean_expression_filter), :]
+    if expression_filter != 0.0:
+        df = df.loc[(df[filter_col] > expression_filter), :]
 
     # Add a key based on columns to compare (e.g., differential expression
     # method, condition, covariates)
@@ -197,7 +226,7 @@ def main():
     )
 
     # Add neglog10 value
-    small_value = np.empty(len(df), dtype=np.float)
+    small_value = np.empty(len(df), dtype=np.float32)
     small_value.fill(0)
     filt = df['pvalue'] == 0.0
     small_value[filt] = np.nanmin(df['pvalue'][np.invert(filt)])  # ** 1.5
@@ -211,6 +240,7 @@ def main():
     # 4. Plot signed -log10 pvalue
 
     # Plot p-value distribution
+    df = df.dropna(subset=['pvalue'])
     gplt_pvd = plt9.ggplot(df, plt9.aes(
         x='pvalue'
     ))
