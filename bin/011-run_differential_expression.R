@@ -77,11 +77,32 @@ optionList <- list(
                         help = "Key to use to determine sample source of cells."
   ),
 
-  optparse::make_option("--mean_cp10k_filter",
+  optparse::make_option("--filter",
                         type = "double",
                         default = 1,
-                        help = "Filter to remove genes with fewer cp10k
-                        averages."
+                        help = "Filter amount"
+  ),
+  
+  optparse::make_option("--filter_modality",
+                        type = "character",
+                        default = "cp10k",
+                        help = "Expression modality to use.
+                        Options: counts, cp10k, logcp10k
+                        "
+  ),
+  
+  optparse::make_option("--filter_metric",
+                        type = "character",
+                        default = "mean",
+                        help = "Expression metric to use.
+                        Options: mean, median
+                        "
+  ),
+  
+  optparse::make_option("--filter_by_comparison",
+                        action = "store_true",
+                        default = FALSE,
+                        help = "Filter by each comparison instead of celltype"
   ),
 
   optparse::make_option("--pre_filter_genes",
@@ -308,9 +329,47 @@ get_pseudobulk_metadata <- function(metadata, sample_key) {
   return(new_metadata)
 }
 
-pct_exprs_n <- function(matrix, threshold = 1) {
-  total <- ncol(matrix)
-  pcts <- apply(matrix, 1, function(x) {
+calculate_filter_metric <- function(
+    modality,
+    metric,
+    count_mtx,
+    cp10k_mtx,
+    logcp10k_mtx
+) {
+  if (modality == 'counts') {
+    filt_mtx <- count_mtx
+  } else if (modality == 'logcp10k') {
+    filt_mtx <- logcp10k_mtx
+  } else { # Default to cp10k
+    filt_mtx <- cp10k_mtx
+  }
+  
+  if (metric == 'median') {
+    filt_metrics <- apply(filt_mtx, 1, median, na.rm=T)
+  } else {
+    filt_metrics <- Matrix::rowMeans(filt_mtx, na.rm = T)
+  }
+  names(filt_metrics) <- rownames(filt_mtx)
+  return(filt_metrics)
+}
+
+pct_exprs_n <- function(
+    modality,
+    threshold,
+    count_mtx,
+    cp10k_mtx,
+    logcp10k_mtx
+) {
+  if (modality == 'counts') {
+    mtx <- count_mtx
+  } else if (modality == 'logcp10k') {
+    mtx <- logcp10k_mtx
+  } else { # Default to cp10k
+    mtx <- cp10k_mtx
+  }
+  
+  total <- ncol(mtx)
+  pcts <- apply(mtx, 1, function(x) {
     return((sum(x >= threshold, na.rm = T) / total) * 100)
   })
   return(pcts)
@@ -648,7 +707,10 @@ get_empty_df <- function() {
 ######################## Read Data & Manipulate ################################
 verbose <- arguments$options$verbose
 output_file_base <- arguments$options$out_file
-mean_filter <- arguments$options$mean_cp10k_filter
+filter <- arguments$options$filter
+filter_modality <- arguments$options$filter_modality
+filter_metric <- arguments$options$filter_metric
+filt_descriptor <- paste0(filter_metric, '_', filter_modality)
 formula_str <- arguments$options$formula
 
 # Read all data in
@@ -661,22 +723,6 @@ if (verbose) {
 counts_matrix <- read_matrix(sprintf("%s/counts", mtx_file_dir))
 logcp10_matrix <- read_matrix(sprintf("%s/log1p_cp10k", mtx_file_dir))
 cp10_matrix <- read_matrix(sprintf("%s/cp10k", mtx_file_dir))
-
-if (arguments$options$pre_filter_genes) {
-  print(sprintf(paste("Filtering genes with fewer than %s counts per 10k",
-                      "BEFORE finding differentially expressed genes."),
-                mean_filter))
-  n_genes_pre_filter <- nrow(cp10_matrix)
-
-  # Filter and update all matrices
-  cp10_matrix <- cp10_matrix[Matrix::rowMeans(cp10_matrix) > mean_filter, ]
-  counts_matrix <- counts_matrix[rownames(cp10_matrix), ]
-  logcp10_matrix <- logcp10_matrix[rownames(cp10_matrix), ]
-
-  print(
-    sprintf("Retaining %s / %s genes.", nrow(cp10_matrix), n_genes_pre_filter)
-  )
-}
 
 # May also need feature metadata
 feature_metadata <- read.csv(
@@ -805,7 +851,6 @@ if (pseudobulk == "pseudobulk") {
   metadata <- mean_impute_nan_numeric(metadata, continuous_covs)
 }
 
-
 # Get formula
 ## For each term:
 ## 1) Check to make sure it exists in metadata
@@ -916,6 +961,45 @@ if (nrow(test_data) == 0) {
 } else {
   ## Run LRT and merge
   ldfs <- apply(test_data, 1, function(i) {
+    counts_mtx__cond <- counts_matrix
+    cp10_mtx__cond <- cp10_matrix
+    logcp10_mtx__cond <-  logcp10_matrix
+    feat_meta__cond <- feature_metadata
+    
+    # Deal with filtering first
+    barcodes <- strsplit(i["barcodes"], split="$$", fixed=T)[[1]]
+    gene_filter__celltype <- calculate_filter_metric(
+      filter_modality,
+      filter_metric,
+      counts_mtx__cond,
+      cp10_mtx__cond,
+      logcp10_mtx__cond
+    )
+    gene_filter__comparison <- calculate_filter_metric(
+      filter_modality,
+      filter_metric,
+      counts_mtx__cond[ , barcodes],
+      cp10_mtx__cond[ , barcodes],
+      logcp10_mtx__cond[ , barcodes]
+    )
+    
+    if (arguments$options$pre_filter_genes) {
+      filt_arr <- gene_filter__celltype
+      if (arguments$options$filter_by_comparison) {
+        filt_arr <- gene_filter__comparison 
+      }
+      
+      print('Applying gene filter BEFORE DGE...')
+      gene_retain <- names(filt_arr[filt_arr >= filter])
+      print(sprintf(
+        "Retaining %s / %s genes.", length(gene_retain), nrow(cp10_mtx__cond)
+      ))
+
+      counts_mtx__cond <- counts_mtx__cond[gene_retain, ]
+      cp10_mtx__cond <- cp10_mtx__cond[gene_retain, ]
+      logcp10_mtx__cond <- logcp10_mtx__cond[gene_retain, ]
+      feat_meta__cond <- feat_meta__cond[gene_retain, , drop=F]
+    }
 
     de_method <- paste(
       strsplit(x=arguments$options$method, split="::", fixed=T)[[1]][-1],
@@ -941,11 +1025,11 @@ if (nrow(test_data) == 0) {
     ## The inputs need to be the same for each script.
     input_type <- DE_get_input_type()
     if (input_type == "counts") {
-      input <- counts_matrix
+      input <- counts_mtx__cond
     } else if (input_type == "logcp10") {
-      input <- logcp10_matrix
+      input <- logcp10_mtx__cond
     } else if (input_type == "cp10") {
-      input <- cp10_matrix
+      input <- cp10_mtx__cond
     }
 
     ## This method should return a DF with the following columns:
@@ -954,7 +1038,7 @@ if (nrow(test_data) == 0) {
     rez <- try(
       DE_calculate_dge(
         input_matrix = input,
-        feature_metadata = feature_metadata,
+        feature_metadata = feat_meta__cond,
         sample_metadata = metadata,
         testing_var = testing_var,
         coef_value = i["alt_var"],
@@ -989,7 +1073,7 @@ if (nrow(test_data) == 0) {
         ruvseq_n_emp,
         ruvseq_min_pvalue,
         ruvseq_k,
-        counts_matrix
+        counts_mtx__cond
       )
       
       ruvseq_factors__formatted <- ruvseq_factors
@@ -1020,7 +1104,7 @@ if (nrow(test_data) == 0) {
       rez <- try(
         DE_calculate_dge(
           input_matrix = input,
-          feature_metadata = feature_metadata,
+          feature_metadata = feat_meta__cond,
           sample_metadata = metadata,
           testing_var = testing_var,
           coef_value = i["alt_var"],
@@ -1076,12 +1160,16 @@ if (nrow(test_data) == 0) {
     rez$ruvseq_k_factors <- ruvseq_k
 
     ## Get count averages
-    barcodes <- strsplit(i["barcodes"], split="$$", fixed=T)[[1]]
-    rez$mean_counts <- Matrix::rowMeans(counts_matrix[rez$gene, barcodes])
-    rez$mean_cp10k <- Matrix::rowMeans(cp10_matrix[rez$gene, barcodes])
-    rez[[paste0("pct_", mean_filter, "cp10k")]] <- pct_exprs_n(
-        cp10_matrix[rez$gene, barcodes], mean_filter
+    rez[[paste0(filt_descriptor, '__celltype')]] <- gene_filter__celltype[rez$gene]
+    rez[[paste0(filt_descriptor, '__comparison')]] <- gene_filter__comparison[rez$gene]
+    rez[[paste0("pct_", arguments$options$filter_modality, '_', filter)]] <- pct_exprs_n(
+      filter_modality,
+      filter,
+      counts_mtx__cond,
+      cp10_mtx__cond,
+      logcp10_mtx__cond
     )
+    
     ## Add number of cells
     rez$n_cells <- ncol(input)
 
@@ -1120,15 +1208,26 @@ if (nrow(de_results) > 0) {
 
   # Filter
   if (verbose) {
-    cat(sprintf("Filtering out genes with mean cp10k expression < %s...\n",
-                mean_filter))
+    cat(sprintf(
+      "Filtering out genes with %s %s expression < %s...\n",
+      filter_metric,
+      filter_modality,
+      filter
+    ))
   }
   n_genes_before <- nrow(de_results)
-  de_results <- de_results[which(de_results$mean_cp10k > mean_filter), ]
+  
+  filt_col <- paste0(filt_descriptor, '__celltype')
+  if (arguments$options$filter_by_comparison) {
+    filt_col <- paste0(filt_descriptor, '__comparison') 
+  }
+  de_results <- de_results[which(de_results[[filt_col]] >= filter), ]
 
   if (verbose) {
-    cat(sprintf("Done. Filtered %s genes.\n",
-                n_genes_before - nrow(de_results)))
+    cat(sprintf(
+      "Done. Filtered %s genes.\n",
+      n_genes_before - nrow(de_results)
+    ))
   }
 
   # p.adjust ignores NA pvalues unless `n` argument is specified

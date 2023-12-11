@@ -10,7 +10,11 @@ differential_expression:
         description: 'List of differential formula and params.
             All covariates in formula should be listed in either
                 variable_continuous or variable_discrete.'
-        mean_cp10k_filter: 1
+        filter_options:
+            filter: 1
+            modality: 'cp10k'
+            metric: 'mean'
+            by_comparison: false
         value:
             - method: 'mast::singlecell::bayesglm'
               formula: '~ sex + disease_status'

@@ -55,7 +55,7 @@ process run_differential_expression {
         path(anndata)
         val(cell_label_column)
         val(experiment_id)
-        val(mean_cp10k_filter)
+        val(filter_opts)
         each cell_label
         each model
 
@@ -113,6 +113,9 @@ process run_differential_expression {
         cmd__options = ""
         if (model.pre_filter_genes) {
             cmd__options = "--pre_filter_genes"
+        }
+        if (filter_opts.by_comparison) {
+            cmd__options = "${cmd__options} --filter_by_comparison"
         }
         if (model.include_proportion_covariates) {
             cmd__options = "${cmd__options} --include_proportion_covariates"
@@ -181,7 +184,9 @@ process run_differential_expression {
             --variable_target "${variable_target}" \
             --method "${model.method}" \
             --method_script $baseDir/bin/${method_script} \
-            --mean_cp10k_filter ${mean_cp10k_filter} \
+            --filter ${filter_opts.filter} \
+            --filter_modality ${filter_opts.modality} \
+            --filter_metric ${filter_opts.metric} \
             --ruvseq_n_empirical_genes ${model.ruvseq_n_empirical_genes} \
             --ruvseq_min_pvalue ${model.ruvseq_min_pvalue} \
             --ruvseq_k_factors ${model.ruvseq_k} \
@@ -781,7 +786,7 @@ workflow wf__differential_expression {
             anndata,
             anndata_cell_label,
             experiment_key,
-            model.mean_cp10k_filter,
+            model.filter_options,
             // '1',  // just run on first cluster for development
             cell_labels,  // run for all clusters for run time
             model.value
