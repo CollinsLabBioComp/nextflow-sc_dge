@@ -38,7 +38,7 @@ differential_expression:
                 covariates: 'cell_label,coef_value'
                 alpha: 0.1
     de_plot_config:
-        mean_expression_filter:
+        expression_filter:
             description: 'For comparison plots, drop genes whose mean
                 expression for a group in anndata_cell_label is < this value.
                 Example: if gene A expression is 0 counts in cluster 1 and 10
