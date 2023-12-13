@@ -226,7 +226,7 @@ def main():
     )
 
     # Add neglog10 value
-    small_value = np.empty(len(df), dtype=np.float32)
+    small_value = np.empty(len(df), dtype=np.float64)
     small_value.fill(0)
     filt = df['pvalue'] == 0.0
     small_value[filt] = np.nanmin(df['pvalue'][np.invert(filt)])  # ** 1.5
