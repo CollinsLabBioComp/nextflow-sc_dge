@@ -527,6 +527,7 @@ mean_impute_nan_numeric <- function(df, cols, verbose = T) {
 }
 
 get_testing_data <- function(test_var, metadata, formula) {
+  ## TODO: Add reference cells to interaction barcodes
   if (is_interaction(test_var)) {
     # Get intersection of full and term-based model
     term__mm <- as.data.frame(model.matrix(
@@ -978,13 +979,17 @@ if (nrow(test_data) == 0) {
     gene_filter__comparison <- calculate_filter_metric(
       filter_modality,
       filter_metric,
-      counts_mtx__cond[ , barcodes],
-      cp10_mtx__cond[ , barcodes],
-      logcp10_mtx__cond[ , barcodes]
+      counts_mtx__cond[ , barcodes, drop=F],
+      cp10_mtx__cond[ , barcodes, drop=F],
+      logcp10_mtx__cond[ , barcodes, drop=F]
     )
     
     if (arguments$options$pre_filter_genes) {
       filt_arr <- gene_filter__celltype
+      
+      ## Note: This currently doesn't work well for complex interaction terms.
+      ## This will only filter based on the contrast (i.e., it doesn't 
+      ## incorporate the reference)
       if (arguments$options$filter_by_comparison) {
         filt_arr <- gene_filter__comparison 
       }
