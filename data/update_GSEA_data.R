@@ -51,7 +51,9 @@ suppressPackageStartupMessages(library(tibble))
 ################################ Functions #####################################
 
 get_category <- function(gsea_cat, gsea_subcat) { 
-  if (gsea_subcat %in% c('C2_CGP', 'CGP')) {
+  if (gsea_cat %in% c('H')) {
+    return('h')
+  } else if (gsea_subcat %in% c('C2_CGP', 'CGP')) {
     return('c2.cgp')
   } else if (gsea_subcat %in% c('C2_CP:BIOCARTA', 'CP:BIOCARTA')) {
     return('c2.cp.biocarta')
