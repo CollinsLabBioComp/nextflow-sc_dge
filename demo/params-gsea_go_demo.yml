@@ -10,14 +10,18 @@ differential_expression:
         description: 'List of differential formula and params.
             All covariates in formula should be listed in either
                 variable_continuous or variable_discrete.'
-        mean_cp10k_filter: 1
+        filter_options:
+            filter: 1
+            modality: 'cp10k'
+            metric: 'mean'
+            by_comparison: false
         value:
             - method: 'deseq::pseudobulk::parametric'
               formula: '~ sex + disease_status'
               variable_target: 'disease_status'
               variable_continuous: ''
               variable_discrete: 'sex,disease_status'
-              variable_discrete_level: 'sex::male,female;;disease_status::healthy,disease'
+              variable_discrete_level: 'sex::male;;disease_status::healthy'
               pre_filter_genes: true
               proportion_covariate_column: 'cell_type'
               include_proportion_covariates: false
@@ -25,6 +29,7 @@ differential_expression:
               ruvseq_n_empirical_genes: 0.5
               ruvseq_min_pvalue: 0.25
               ruvseq_k: 5
+              prune_collinear_terms: false
     de_merge_config:
         ihw_correction:
             run_process: true
@@ -33,7 +38,7 @@ differential_expression:
                 covariates: 'cell_label,coef_value'
                 alpha: 0.1
     de_plot_config:
-        mean_expression_filter:
+        expression_filter:
             description: 'For comparison plots, drop genes whose mean
                 expression for a group in anndata_cell_label is < this value.
                 Example: if gene A expression is 0 counts in cluster 1 and 10

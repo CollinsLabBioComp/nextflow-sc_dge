@@ -25,7 +25,7 @@ Parameters are applied within each cell type as denoted by `anndata_cell_label`
   - `variable_target`: Term in `formula` to test (e.g., disease_status)
   - `variable_continuous`: Terms in `formula` that should be cast as continuous covariates
   - `variable_discrete`: Terms in `formula` that should be cast as discrete (i.e., categorical) covariates
-  - `variable_discrete_level`: Reference information for discrete covariates, formatted as "cov_1::ref,alt_1,alt_2,...,alt_n;;cov_2::ref,alt_1"
+  - `variable_discrete_level`: Reference information for discrete covariates, formatted as "cov_1::ref;;cov_2::ref"
   - `pre_filter_genes`: Logical (e.g., true or false) to apply `mean_cp10k_filter` before or after performing differential expression
   - `proportion_covariate_column`: Column in cell metadata to calculate the proportion of cells from each experiment (defined by `experiment_key_column`) representing each value. For instance, if same as `anndata_cell_label`,  pipeline will calculate the proportion of each cell type for each experiment key.
   - `include_proportion_covariates`: Logical (e.g., true or false) to include proportions from `proportion_covariate_column` in `formula`

@@ -55,7 +55,7 @@ process run_differential_expression {
         path(anndata)
         val(cell_label_column)
         val(experiment_id)
-        val(mean_cp10k_filter)
+        val(filter_opts)
         each cell_label
         each model
 
@@ -114,6 +114,9 @@ process run_differential_expression {
         if (model.pre_filter_genes) {
             cmd__options = "--pre_filter_genes"
         }
+        if (filter_opts.by_comparison) {
+            cmd__options = "${cmd__options} --filter_by_comparison"
+        }
         if (model.include_proportion_covariates) {
             cmd__options = "${cmd__options} --include_proportion_covariates"
             formula_clean = "${formula_clean}__proportion_covs-${prop_cov_col}"
@@ -123,6 +126,9 @@ process run_differential_expression {
             formula_clean = "${formula_clean}__ruvseq-ngenes=${model.ruvseq_n_empirical_genes}"
             formula_clean = "${formula_clean}_min_pvalue=${model.ruvseq_min_pvalue}"
             formula_clean = "${formula_clean}_kfactors=${model.ruvseq_k}"
+        }
+        if (model.prune_collinear_terms) {
+            cmd__options = "${cmd__options} --prune_collinear_terms"
         }
         outdir = "${outdir_prev}/differential_expression/${variable_target_clean}"
         outdir = "${outdir}/cell_label=${cell_label}"
@@ -178,7 +184,9 @@ process run_differential_expression {
             --variable_target "${variable_target}" \
             --method "${model.method}" \
             --method_script $baseDir/bin/${method_script} \
-            --mean_cp10k_filter ${mean_cp10k_filter} \
+            --filter ${filter_opts.filter} \
+            --filter_modality ${filter_opts.modality} \
+            --filter_metric ${filter_opts.metric} \
             --ruvseq_n_empirical_genes ${model.ruvseq_n_empirical_genes} \
             --ruvseq_min_pvalue ${model.ruvseq_min_pvalue} \
             --ruvseq_k_factors ${model.ruvseq_k} \
@@ -388,7 +396,10 @@ process plot_merged_dge {
             val(condition),
             path(merged_df)
         )
-        each mean_expression_filter
+        val(expression_metric)
+        val(expression_modality)
+        val(by_comparison)
+        each expression_filter
 
     output:
         val(outdir, emit: outdir)
@@ -397,6 +408,10 @@ process plot_merged_dge {
 
     script:
         runid = random_hex(16)
+        cmd__options = ''
+        if (by_comparison) {
+            cmd__options = "--expression_filter_by_comparison"
+        }
         outdir = "${outdir_prev}/differential_expression/${condition}/"
         outfile = "${condition}_merged_de"
         // script automatically adds expression filter
@@ -411,8 +426,11 @@ process plot_merged_dge {
         013-compare_de_results.py \
             --dataframe ${merged_df} \
             --columns_to_compare de_method,formula_passed,include_cell_proportions \
-            --mean_expression_filter ${mean_expression_filter} \
-            --output_file '${outfile}'
+            --expression_metric ${expression_metric} \
+            --expression_modality ${expression_modality} \
+            --expression_filter ${expression_filter} \
+            --output_file '${outfile}' \
+            ${cmd__options}
         mkdir plots
         mv *pdf plots/ 2>/dev/null || true
         mv *png plots/ 2>/dev/null || true
@@ -778,7 +796,7 @@ workflow wf__differential_expression {
             anndata,
             anndata_cell_label,
             experiment_key,
-            model.mean_cp10k_filter,
+            model.filter_options,
             // '1',  // just run on first cluster for development
             cell_labels,  // run for all clusters for run time
             model.value
@@ -836,7 +854,10 @@ workflow wf__differential_expression {
         plot_merged_dge(
             outdir,
             merge_de_dataframes.out.merged_results,
-            de_plot_config.mean_expression_filter.value
+            model.filter_options.metric,
+            model.filter_options.modality,
+            model.filter_options.by_comparison,
+            de_plot_config.expression_filter.value
         )
 
         // First run GO Enrich on merged DGE results
