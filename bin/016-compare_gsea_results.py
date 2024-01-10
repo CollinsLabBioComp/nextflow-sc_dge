@@ -177,7 +177,7 @@ def main():
     )
 
     # Add neglog10 value
-    small_value = np.empty(len(df), dtype=np.float)
+    small_value = np.empty(len(df), dtype=np.float64)
     small_value.fill(0)
     filt = df['pvalue'] == 0.0
     small_value[filt] = np.nanmin(df['pvalue'][np.invert(filt)])  # ** 1.5
@@ -302,8 +302,7 @@ def main():
             },
             'scatter_kws': {
                 'alpha': 0.1,
-                'edgecolor': 'b',
-                'linewidth': 1.0
+                'edgecolor': 'b'
             }
         }
     )
@@ -331,8 +330,7 @@ def main():
                 },
                 'scatter_kws': {
                     'alpha': 0.1,
-                    'edgecolor': 'b',
-                    'linewidth': 1.0
+                    'edgecolor': 'b'
                 }
             }
         )
@@ -363,8 +361,7 @@ def main():
             },
             'scatter_kws': {
                 'alpha': 0.1,
-                'edgecolor': 'b',
-                'linewidth': 1.0
+                'edgecolor': 'b'
             }
         }
     )
@@ -392,8 +389,7 @@ def main():
                 },
                 'scatter_kws': {
                     'alpha': 0.1,
-                    'edgecolor': 'b',
-                    'linewidth': 1.0
+                    'edgecolor': 'b'
                 }
             }
         )

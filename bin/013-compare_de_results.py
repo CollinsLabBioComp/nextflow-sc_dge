@@ -352,8 +352,7 @@ def main():
             },
             'scatter_kws': {
                 'alpha': 0.1,
-                'edgecolor': 'b',
-                'linewidth': 1.0
+                'edgecolor': 'b'
             }
         }
     )
@@ -381,8 +380,7 @@ def main():
                 },
                 'scatter_kws': {
                     'alpha': 0.1,
-                    'edgecolor': 'b',
-                    'linewidth': 1.0
+                    'edgecolor': 'b'
                 }
             }
         )
@@ -413,8 +411,7 @@ def main():
             },
             'scatter_kws': {
                 'alpha': 0.1,
-                'edgecolor': 'b',
-                'linewidth': 1.0
+                'edgecolor': 'b'
             }
         }
     )
@@ -442,8 +439,7 @@ def main():
                 },
                 'scatter_kws': {
                     'alpha': 0.1,
-                    'edgecolor': 'b',
-                    'linewidth': 1.0
+                    'edgecolor': 'b'
                 }
             }
         )
