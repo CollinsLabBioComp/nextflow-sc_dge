@@ -12,6 +12,11 @@ Parameters are applied within each cell type as denoted by `anndata_cell_label`
 
 - `mean_cp10k_filter`: Remove genes with mean counts per 10,000 (CP10K) expression <= `mean_cp10k_filter`
 - `models`: List of configurations for differential expression methods to run
+  - `filter_options`: Options for the optional pre-filter.
+    * `filter`: Value to set as minimum for filter.
+    * `modality`: `[cp10k|counts]`
+    * `metric`: Default is `mean`. TODO -- alternate metrics implemented?
+    * `by_comparison`: TODO -- what is this?
   - `method`: String in the format `package::resolution::model`. Possible values for each:
     * `package`: "mast", "edger", "deseq"
     * `resolution`: "singlecell" or "pseudobulk"
